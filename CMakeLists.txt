@@ -1,0 +1,42 @@
+cmake_minimum_required(VERSION 3.10)
+project(tsab)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/)
+set(CMAKE_CXX_STANDARD 17)
+
+if (EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    set(CMAKE_AR "em++")
+    set(CMAKE_STATIC_LIBRARY_SUFFIX ".bc")
+    set(CMAKE_C_CREATE_STATIC_LIBRARY "<CMAKE_AR> -o <TARGET> <LINK_FLAGS> <OBJECTS>")
+    set(CMAKE_CXX_CREATE_STATIC_LIBRARY "<CMAKE_AR> -o <TARGET> <LINK_FLAGS> <OBJECTS>")
+endif()
+
+include_directories(include/ libs/include/ libs/)
+
+if (EMSCRIPTEN)
+    file(GLOB_RECURSE SOURCE_FILES src/html/*.cpp src/tsab/*.cpp libs/*.cpp libs/*.c)
+else()
+    file(GLOB_RECURSE SOURCE_FILES src/native/*.cpp src/tsab/*.cpp libs/*.cpp libs/*.c)
+endif()
+
+add_executable(tsab ${SOURCE_FILES})
+
+target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a)
+
+if (EMSCRIPTEN)
+    add_definitions("-s USE_SDL=2 -s USE_SDL_IMAGE=2 --shell-file src/html/shell.html -o index.html")
+    set_target_properties(tsab PROPERTIES LINK_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 --shell-file src/html/shell.html -o index.html")
+else()
+    find_package(SDL2 REQUIRED)
+    find_package(SDL2_ttf REQUIRED)
+    find_package(SDL2_image REQUIRED)
+    find_package(SDL2_mixer REQUIRED)
+    find_package(OpenGL REQUIRED)
+    find_package(GLUT REQUIRED)
+
+    include_directories(${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
+    target_link_libraries(tsab ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY})
+endif()
