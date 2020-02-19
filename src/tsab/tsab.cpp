@@ -5,12 +5,12 @@
 #include <SDL2/SDL.h>
 
 bool tsab_init() {
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
 		tsab_report_sdl_error();
 		return false;
 	}
 
-	if (!tsab_graphics_init("tsab", 640, 480)) {
+	if (!tsab_graphics_init("tsab", 320, 180)) {
 		SDL_Quit();
 		return false;
 	}
