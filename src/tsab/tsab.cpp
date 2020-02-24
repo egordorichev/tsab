@@ -3,7 +3,10 @@
 #include <tsab/tsab_graphics.hpp>
 
 #include <lit/lit.hpp>
+
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 
 #include <cstring>
 
@@ -30,6 +33,9 @@ bool tsab_init() {
 		return false;
 	}
 
+	TTF_Init();
+	IMG_Init(IMG_INIT_PNG);
+
 	state = lit_new_state();
 
 	lit_init_api(state);
@@ -43,6 +49,8 @@ bool tsab_init() {
 	update_callback = lit_get_global_function(state, CONST_STRING(state, "update"));
 	render_callback = lit_get_global_function(state, CONST_STRING(state, "render"));
 
+	tsab_graphics_get_ready();
+
 	return true;
 }
 
@@ -53,6 +61,9 @@ void tsab_quit() {
 	lit_free_state(state);
 
 	tsab_graphics_quit();
+
+	IMG_Quit();
+	TTF_Quit();
 	SDL_Quit();
 }
 

@@ -5,6 +5,7 @@
 #include <lit/lit.hpp>
 
 bool tsab_graphics_init(const char* title, uint w, uint h);
+void tsab_graphics_get_ready();
 void tsab_graphics_quit();
 
 void tsab_graphics_begin_frame();
