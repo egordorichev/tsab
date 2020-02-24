@@ -4,14 +4,14 @@
 #include <SDL_GPU/SDL_gpu.h>
 #include <SDL2/SDL.h>
 
-SDL_Color current_color = { 255, 255, 255, 255 };
-float bg_color[] = { 0, 0, 0 };
+static SDL_Color current_color = { 255, 255, 255, 255 };
+static float bg_color[] = { 0, 0, 0 };
 
-SDL_Window* window;
-SDL_Renderer* renderer;
+static SDL_Window* window;
+static SDL_Renderer* renderer;
 
-GPU_Target *screen;
-GPU_Image *current_target;
+static GPU_Target *screen;
+static GPU_Image *current_target;
 
 bool tsab_graphics_init(const char* title, uint w, uint h) {
 	window = SDL_CreateWindow("tsab", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN);
