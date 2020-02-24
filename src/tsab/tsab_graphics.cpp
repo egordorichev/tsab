@@ -14,7 +14,7 @@ static GPU_Target *screen;
 static GPU_Image *current_target;
 
 bool tsab_graphics_init(const char* title, uint w, uint h) {
-	window = SDL_CreateWindow("tsab", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
 	if (window == nullptr) {
 		tsab_report_sdl_error();
@@ -55,4 +55,35 @@ void tsab_graphics_quit() {
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+}
+
+void tsab_graphics_begin_frame() {
+	GPU_ClearRGB(screen, bg_color[0], bg_color[1], bg_color[2]);
+}
+
+void tsab_graphics_finish_frame() {
+	GPU_Flip(screen);
+}
+
+LIT_NATIVE(tsab_graphics_circle) {
+	// if (tsab_shaders_get_active() > -1) {
+	//  	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
+	// }
+
+	double x = LIT_CHECK_NUMBER(0);
+	double y = LIT_CHECK_NUMBER(1);
+	double r = LIT_CHECK_NUMBER(2);
+	bool filled = LIT_GET_BOOL(3, true);
+
+	if (filled) {
+		GPU_CircleFilled(current_target == nullptr ? screen : current_target->target, x, y, r, current_color);
+	} else {
+		GPU_Circle(current_target == nullptr ? screen : current_target->target, x, y, r, current_color);
+	}
+
+	return 0;
+}
+
+void tsab_graphics_bind_api(LitState* state) {
+	lit_define_native(state, "tsabGraphicsCircle", tsab_graphics_circle_native);
 }

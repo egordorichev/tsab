@@ -83,7 +83,8 @@ static const char* lit_object_type_names[] = {
 	"native_bound_method",
 	"array",
 	"map",
-	"userdata"
+	"userdata",
+	"range"
 };
 
 typedef struct sLitObject {
@@ -201,6 +202,7 @@ typedef struct LitFiber {
 	uint frame_count;
 
 	LitModule* module;
+	bool abort;
 } LitFiber;
 
 LitFiber* lit_create_fiber(LitState* state, LitModule* module, LitFunction* function);
@@ -210,8 +212,9 @@ typedef struct sLitClass {
 
 	LitString* name;
 	LitFunction* init_method;
+
 	LitTable methods;
-	LitTable static_methods;
+	LitTable static_fields;
 
 	struct sLitClass* super;
 } LitClass;
