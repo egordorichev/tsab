@@ -23,6 +23,7 @@ static GPU_Image *current_target;
 static std::vector<GPU_Image *> canvas_list;
 static std::vector<TTF_Font *> fonts;
 static TTF_Font *active_font;
+static bool pushed = false;
 
 bool tsab_graphics_init(const char* title, uint w, uint h) {
 	window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
@@ -469,6 +470,49 @@ LIT_METHOD(tsab_graphics_print) {
 	return NULL_VALUE;
 }
 
+LIT_METHOD(tsab_graphics_set_camera) {
+	double x = LIT_GET_NUMBER(0, 0);
+	double y = LIT_GET_NUMBER(1, 0);
+	double s = LIT_GET_NUMBER(2, 1);
+
+	GPU_MatrixMode(GPU_MODELVIEW);
+
+	if (pushed) {
+		GPU_PopMatrix();
+	}
+
+	if (arg_count == 0) {
+		pushed = false;
+		return NULL_VALUE;
+	}
+
+	if (current_target == nullptr) {
+		y *= -1;
+	}
+
+	pushed = true;
+	GPU_PushMatrix();
+	GPU_Scale(s, s, 1.0f);
+	GPU_Translate(x, y, 0.0f);
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_graphics_set_clip) {
+	if (arg_count == 0) {
+		GPU_UnsetClip(current_target == nullptr ? screen : current_target->target);
+		return NULL_VALUE;
+	}
+
+	double x = LIT_CHECK_NUMBER(0);
+	double y = LIT_CHECK_NUMBER(1);
+	double w = LIT_CHECK_NUMBER(2);
+	double h = LIT_CHECK_NUMBER(3);
+
+	GPU_SetClip(current_target == nullptr ? screen : current_target->target, x, y, w, h);
+	return NULL_VALUE;
+}
+
 void tsab_graphics_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("Graphics")
 		LIT_BIND_STATIC_METHOD("flip", tsab_graphics_flip)
@@ -490,5 +534,8 @@ void tsab_graphics_bind_api(LitState* state) {
 		LIT_BIND_STATIC_METHOD("newFont", tsab_graphics_new_font)
 		LIT_BIND_STATIC_METHOD("setFont", tsab_graphics_set_font)
 		LIT_BIND_STATIC_METHOD("print", tsab_graphics_print)
+
+		LIT_BIND_STATIC_METHOD("setCamera", tsab_graphics_set_camera)
+		LIT_BIND_STATIC_METHOD("setClip", tsab_graphics_set_clip)
 	LIT_END_CLASS()
 }
