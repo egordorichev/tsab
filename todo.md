@@ -1,7 +1,7 @@
 # todo
 
-* config
 * error screen
+* input
 * audio
 * shaders
 * hotswap

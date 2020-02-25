@@ -22,24 +22,32 @@ static Uint32 fps;
 static Uint32 time_per_frame = 1000 / 60;
 static Uint32 delta;
 
+static void configure();
+
+static int window_width = 640;
+static int window_height = 480;
+static char* title = (char*) "tsab";
+
 bool tsab_init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
 		tsab_report_sdl_error();
 		return false;
 	}
 
-	if (!tsab_graphics_init("tsab", 320, 180)) {
+	state = lit_new_state();
+
+	lit_init_api(state);
+	lit_open_libraries(state);
+
+	configure();
+
+	if (!tsab_graphics_init(title, window_width, window_height)) {
 		SDL_Quit();
 		return false;
 	}
 
 	TTF_Init();
 	IMG_Init(IMG_INIT_PNG);
-
-	state = lit_new_state();
-
-	lit_init_api(state);
-	lit_open_libraries(state);
 
 	tsab_graphics_bind_api(state);
 
@@ -111,5 +119,35 @@ void tsab_loop() {
 
 		start_time = end_time;
 		end_time = SDL_GetTicks();
+	}
+}
+
+void configure() {
+	LitValue config = lit_interpret_file(state, "config.lit").result;
+
+	if (IS_MAP(config)) {
+		LitMap* map = AS_MAP(config);
+		LitValue window = *lit_get_field(state, map, "window");
+
+		if (IS_MAP(window)) {
+			LitMap* window_map = AS_MAP(window);
+			LitValue value = *lit_get_field(state, window_map, "width");
+
+			if (IS_NUMBER(value)) {
+				window_width = AS_NUMBER(value);
+			}
+
+			value = *lit_get_field(state, window_map, "height");
+
+			if (IS_NUMBER(value)) {
+				window_height = AS_NUMBER(value);
+			}
+
+			value = *lit_get_field(state, window_map, "title");
+
+			if (IS_STRING(value)) {
+				title = AS_CSTRING(value);
+			}
+		}
 	}
 }
