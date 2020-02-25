@@ -1,6 +1,7 @@
 #include <tsab/tsab.hpp>
 #include <tsab/tsab_common.hpp>
 #include <tsab/tsab_graphics.hpp>
+#include <tsab/tsab_input.hpp>
 
 #include <lit/lit.hpp>
 
@@ -46,10 +47,13 @@ bool tsab_init() {
 		return false;
 	}
 
+	tsab_input_init();
+
 	TTF_Init();
 	IMG_Init(IMG_INIT_PNG);
 
 	tsab_graphics_bind_api(state);
+	tsab_input_bind_api(state);
 
 	lit_interpret_file(state, "main.lit");
 	lit_call_function(state, lit_get_global_function(state, CONST_STRING(state, "init")), NULL, 0);
@@ -68,6 +72,7 @@ void tsab_quit() {
 	lit_free_api(state);
 	lit_free_state(state);
 
+	tsab_input_quit();
 	tsab_graphics_quit();
 
 	IMG_Quit();
@@ -82,13 +87,20 @@ bool tsab_frame() {
 				return true;
 			}
 		}
+
+		tsab_input_handle_event(&event);
 	}
 
 	if (update_callback != NULL) {
 		LitValue dt = NUMBER_VALUE(delta / 1000.0);
-		lit_call(state, OBJECT_VALUE(update_callback), &dt, 1);
+		LitValue result = lit_call(state, OBJECT_VALUE(update_callback), &dt, 1).result;
+
+		if (IS_BOOL(result) && AS_BOOL(result)) {
+			return true;
+		}
 	}
 
+	tsab_input_update();
 	tsab_graphics_begin_frame();
 
 	if (render_callback != NULL) {
@@ -96,6 +108,7 @@ bool tsab_frame() {
 	}
 
 	tsab_graphics_finish_frame();
+
 	return false;
 }
 
@@ -122,7 +135,7 @@ void tsab_loop() {
 	}
 }
 
-void configure() {
+static void configure() {
 	LitValue config = lit_interpret_file(state, "config.lit").result;
 
 	if (IS_MAP(config)) {

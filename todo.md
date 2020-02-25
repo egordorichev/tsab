@@ -1,7 +1,7 @@
 # todo
 
+* input: keyPressed, keyReleased, buttonPressed, buttonReleased, mouseMoved, controllerConnected, controllerDisconnected
 * error screen
-* input
 * audio
 * shaders
 * hotswap
