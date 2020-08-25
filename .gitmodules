@@ -1,0 +1,3 @@
+[submodule "libs/lit"]
+	path = libs/lit
+	url = https://github.com/egordorichev/lit

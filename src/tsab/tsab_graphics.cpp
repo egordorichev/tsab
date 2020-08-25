@@ -1,4 +1,5 @@
 #include <tsab/tsab_graphics.hpp>
+#include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_common.hpp>
 
 #include <SDL_GPU/SDL_gpu.h>
@@ -60,6 +61,10 @@ bool tsab_graphics_init(const char* title, uint w, uint h) {
 	GPU_Flip(screen);
 
 	return true;
+}
+
+bool tsab_graphics_set_title(const char* title) {
+	SDL_SetWindowTitle(window, title);
 }
 
 void tsab_graphics_get_ready() {
@@ -274,9 +279,9 @@ LIT_METHOD(tsab_graphics_set_color) {
 }
 
 LIT_METHOD(tsab_graphics_draw) {
-	// if (tsab_shaders_get_active() > -1) {
-	//	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 1);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 1);
+	}
 
 	auto *target = current_target == nullptr ? screen : current_target->target;
 
@@ -311,9 +316,9 @@ LIT_METHOD(tsab_graphics_draw) {
 }
 
 LIT_METHOD(tsab_graphics_circle) {
-	// if (tsab_shaders_get_active() > -1) {
-	//  	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+	 	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
+	}
 
 	double x = LIT_CHECK_NUMBER(0);
 	double y = LIT_CHECK_NUMBER(1);
@@ -330,9 +335,9 @@ LIT_METHOD(tsab_graphics_circle) {
 }
 
 LIT_METHOD(tsab_graphics_rectangle) {
-	// if (tsab_shaders_get_active() > -1) {
-	//	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
+	}
 
 	double x = LIT_CHECK_NUMBER(0);
 	double y = LIT_CHECK_NUMBER(1);
@@ -350,9 +355,9 @@ LIT_METHOD(tsab_graphics_rectangle) {
 }
 
 LIT_METHOD(tsab_graphics_ellipse) {
-	// if (tsab_shaders_get_active() > -1) {
-	//	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
+	}
 
 	double x = LIT_CHECK_NUMBER(0);
 	double y = LIT_CHECK_NUMBER(1);
@@ -371,9 +376,9 @@ LIT_METHOD(tsab_graphics_ellipse) {
 }
 
 LIT_METHOD(tsab_graphics_triangle) {
-	// if (tsab_shaders_get_active() > -1) {
-	//	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
+	}
 
 	double x1 = LIT_CHECK_NUMBER(0);
 	double y1 = LIT_CHECK_NUMBER(1);
@@ -393,9 +398,9 @@ LIT_METHOD(tsab_graphics_triangle) {
 }
 
 LIT_METHOD(tsab_graphics_point) {
-	// if (tsab_shaders_get_active() > -1) {
-	//	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
+	}
 
 	double x = LIT_CHECK_NUMBER(1);
 	double y = LIT_CHECK_NUMBER(2);
@@ -406,9 +411,9 @@ LIT_METHOD(tsab_graphics_point) {
 }
 
 LIT_METHOD(tsab_graphics_line) {
-	// if (tsab_shaders_get_active() > -1) {
-	//	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
+	}
 
 	double x1 = LIT_CHECK_NUMBER(0);
 	double y1 = LIT_CHECK_NUMBER(1);
@@ -451,9 +456,13 @@ LIT_METHOD(tsab_graphics_set_font) {
 }
 
 LIT_METHOD(tsab_graphics_print) {
-	// if (tsab_shaders_get_active() > -1) {
-	//	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 1);
-	// }
+	if (tsab_shaders_get_active() > -1) {
+		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 1);
+	}
+
+	if (active_font == nullptr) {
+		return NULL_VALUE;
+	}
 
 	const char *text = LIT_CHECK_STRING(0);
 	double x = LIT_GET_NUMBER(1, 0);
@@ -464,7 +473,8 @@ LIT_METHOD(tsab_graphics_print) {
 
 	SDL_Surface *surface = TTF_RenderUTF8_Blended(active_font, text, current_color);
 	GPU_Image *image = GPU_CopyImageFromSurface(surface);
-	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w/2, y + image->h/2, image->w/2, image->h/2, r, sx, sy);
+	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2,
+		y + image->h / 2, image->w / 2, image->h / 2, r, sx, sy);
 	SDL_FreeSurface(surface);
 
 	return NULL_VALUE;

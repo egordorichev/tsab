@@ -2,9 +2,10 @@
 #define TSAB_GRAPHICS_HPP
 
 #include <tsab/tsab_common.hpp>
-#include <lit/lit.hpp>
 
 bool tsab_graphics_init(const char* title, uint w, uint h);
+bool tsab_graphics_set_title(const char* title);
+
 void tsab_graphics_get_ready();
 void tsab_graphics_quit();
 
