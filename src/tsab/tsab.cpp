@@ -11,7 +11,6 @@
 #include <SDL2/SDL_image.h>
 
 #include <cstring>
-#include <string>
 
 static LitState* state;
 static SDL_Event event;
@@ -25,11 +24,7 @@ static float delta;
 static float time_per_frame = 1000.0f / 60;
 static float fps;
 
-static void configure();
-
-static int window_width = 640;
-static int window_height = 480;
-static char* title = (char*) "tsab";
+static LitMap* configure();
 
 bool tsab_init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
@@ -38,12 +33,10 @@ bool tsab_init() {
 	}
 
 	state = lit_new_state();
-
 	lit_open_libraries(state);
+	LitMap* config = configure();
 
-	configure();
-
-	if (!tsab_graphics_init(title, window_width, window_height)) {
+	if (!tsab_graphics_init(state, config)) {
 		SDL_Quit();
 		return false;
 	}
@@ -132,32 +125,18 @@ void tsab_loop() {
 	}
 }
 
-static void configure() {
-	LitValue config = lit_interpret_file(state, "config.lit", false).result;
+static LitMap* configure() {
+	LitInterpretResult conf = lit_interpret_file(state, "config.lit", false);
+
+	if (conf.type != INTERPRET_OK) {
+		return nullptr;
+	}
+
+	LitValue config = conf.result;
 
 	if (IS_MAP(config)) {
-		LitMap* map = AS_MAP(config);
-		LitValue window = lit_get_map_field(state, map, "window");
-
-		if (IS_MAP(window)) {
-			LitMap* window_map = AS_MAP(window);
-			LitValue value = lit_get_map_field(state, window_map, "width");
-
-			if (IS_NUMBER(value)) {
-				window_width = AS_NUMBER(value);
-			}
-
-			value = lit_get_map_field(state, window_map, "height");
-
-			if (IS_NUMBER(value)) {
-				window_height = AS_NUMBER(value);
-			}
-
-			value = lit_get_map_field(state, window_map, "title");
-
-			if (IS_STRING(value)) {
-				title = AS_CSTRING(value);
-			}
-		}
+		return AS_MAP(config);
 	}
+
+	return nullptr;
 }

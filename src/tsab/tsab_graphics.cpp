@@ -25,9 +25,59 @@ static std::vector<GPU_Image *> canvas_list;
 static std::vector<TTF_Font *> fonts;
 static TTF_Font *active_font;
 static bool pushed = false;
+static bool window_hidden = true;
 
-bool tsab_graphics_init(const char* title, uint w, uint h) {
-	window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
+bool tsab_graphics_init(LitState* state, LitMap* config) {
+	int width = 640;
+	int height = 480;
+	int min_width = -1;
+	int min_height = -1;
+	int max_width = -1;
+	int max_height = -1;
+
+	char* title = (char*) "tsab";
+	bool bordered = true;
+
+	LitValue w = lit_get_map_field(state, config, "window");
+
+	if (IS_MAP(w)) {
+		LitMap* window_map = AS_MAP(w);
+		LitValue value;
+
+		if (IS_NUMBER(value = lit_get_map_field(state, window_map, "width"))) {
+			width = AS_NUMBER(value);
+		}
+
+		if (IS_NUMBER(value = lit_get_map_field(state, window_map, "height"))) {
+			height = AS_NUMBER(value);
+		}
+
+		if (IS_NUMBER(value = lit_get_map_field(state, window_map, "min_width"))) {
+			min_width = AS_NUMBER(value);
+		}
+
+		if (IS_NUMBER(value = lit_get_map_field(state, window_map, "min_height"))) {
+			min_height = AS_NUMBER(value);
+		}
+
+		if (IS_NUMBER(value = lit_get_map_field(state, window_map, "max_width"))) {
+			max_width = AS_NUMBER(value);
+		}
+
+		if (IS_NUMBER(value = lit_get_map_field(state, window_map, "max_height"))) {
+			max_height = AS_NUMBER(value);
+		}
+
+		if (IS_STRING(value = lit_get_map_field(state, window_map, "title"))) {
+			title = AS_CSTRING(value);
+		}
+
+		if (IS_BOOL(value = lit_get_map_field(state, window_map, "bordered"))) {
+			bordered = AS_BOOL(value);
+		}
+	}
+
+	window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE);
 
 	if (window == nullptr) {
 		tsab_report_sdl_error();
@@ -44,9 +94,20 @@ bool tsab_graphics_init(const char* title, uint w, uint h) {
 	}
 
 	GPU_SetInitWindow(SDL_GetWindowID(window));
-	SDL_SetWindowMinimumSize(window, w, h);
 
-	screen = GPU_Init(w, h, GPU_DEFAULT_INIT_FLAGS);
+	if (min_width != -1 && min_height != -1) {
+		SDL_SetWindowMinimumSize(window, min_width, min_height);
+	}
+
+	if (max_width != -1 && max_height != -1) {
+		SDL_SetWindowMaximumSize(window, max_width, max_height);
+	}
+
+	if (!bordered) {
+		SDL_SetWindowBordered(window, SDL_FALSE);
+	}
+
+	screen = GPU_Init(width, height, GPU_DEFAULT_INIT_FLAGS);
 
 	if (screen == nullptr) {
 		tsab_report_sdl_error();
@@ -57,7 +118,7 @@ bool tsab_graphics_init(const char* title, uint w, uint h) {
 		return false;
 	}
 
-	GPU_ClearRGB(screen, bg_color[0], bg_color[1], bg_color[2]);
+	GPU_ClearRGBA(screen, bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
 	GPU_Flip(screen);
 
 	return true;
@@ -69,6 +130,7 @@ bool tsab_graphics_set_title(const char* title) {
 
 void tsab_graphics_get_ready() {
 	SDL_ShowWindow(window);
+	window_hidden = false;
 }
 
 void tsab_graphics_quit() {
@@ -534,6 +596,42 @@ LIT_METHOD(tsab_window_title_set) {
 	return NULL_VALUE;
 }
 
+LIT_METHOD(tsab_window_hidden_get) {
+	return BOOL_VALUE(window_hidden);
+}
+
+LIT_METHOD(tsab_window_hidden_set) {
+	window_hidden = LIT_CHECK_BOOL(0);
+
+	if (window_hidden) {
+		SDL_HideWindow(window);
+	} else {
+		SDL_ShowWindow(window);
+	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_window_minimize) {
+	SDL_MinimizeWindow(window);
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_window_maximize) {
+	SDL_MaximizeWindow(window);
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_window_restore) {
+	SDL_RestoreWindow(window);
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_window_raise) {
+	SDL_RaiseWindow(window);
+	return NULL_VALUE;
+}
+
 LIT_METHOD(tsab_window_width_get) {
 	int x;
 	int y;
@@ -550,12 +648,21 @@ LIT_METHOD(tsab_window_height_get) {
 	return NUMBER_VALUE(y);
 }
 
-
 LIT_METHOD(tsab_window_set_size) {
 	int width = LIT_CHECK_NUMBER(0);
 	int height = LIT_CHECK_NUMBER(1);
 
 	SDL_SetWindowSize(window, width, height);
+	GPU_SetWindowResolution(width, height);
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_window_set_fullscreen) {
+	bool fullscreen = LIT_CHECK_BOOL(0);
+	bool desktop = LIT_GET_BOOL(1, true);
+
+	GPU_SetFullscreen(fullscreen, desktop);
 
 	return NULL_VALUE;
 }
@@ -576,7 +683,6 @@ LIT_METHOD(tsab_window_y_get) {
 	return NUMBER_VALUE(y);
 }
 
-
 LIT_METHOD(tsab_window_set_position) {
 	int x = LIT_CHECK_NUMBER(0);
 	int y = LIT_CHECK_NUMBER(1);
@@ -589,10 +695,16 @@ LIT_METHOD(tsab_window_set_position) {
 void tsab_graphics_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("Window")
 		LIT_BIND_STATIC_FIELD("title", tsab_window_title_get, tsab_window_title_set)
+		LIT_BIND_STATIC_FIELD("hidden", tsab_window_hidden_get, tsab_window_hidden_set)
+		LIT_BIND_STATIC_METHOD("minimize", tsab_window_minimize)
+		LIT_BIND_STATIC_METHOD("maximize", tsab_window_maximize)
+		LIT_BIND_STATIC_METHOD("restore", tsab_window_restore)
+		LIT_BIND_STATIC_METHOD("raise", tsab_window_raise)
 
 		LIT_BIND_STATIC_GETTER("width", tsab_window_width_get)
 		LIT_BIND_STATIC_GETTER("height", tsab_window_height_get)
 		LIT_BIND_STATIC_METHOD("setSize", tsab_window_set_size)
+		LIT_BIND_STATIC_METHOD("setFullscreen", tsab_window_set_fullscreen)
 
 		LIT_BIND_STATIC_GETTER("x", tsab_window_x_get)
 		LIT_BIND_STATIC_GETTER("y", tsab_window_y_get)

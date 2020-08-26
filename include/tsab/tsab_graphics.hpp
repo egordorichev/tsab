@@ -3,7 +3,7 @@
 
 #include <tsab/tsab_common.hpp>
 
-bool tsab_graphics_init(const char* title, uint w, uint h);
+bool tsab_graphics_init(LitState* state, LitMap* config);
 bool tsab_graphics_set_title(const char* title);
 void tsab_graphics_clear_screen();
 
