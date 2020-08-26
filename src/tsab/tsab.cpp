@@ -127,10 +127,6 @@ void tsab_loop() {
 
 		fps = 1000.0f / delta;
 
-		// TMP: just for debug
-		tsab_graphics_set_title(std::to_string((int) fps).c_str());
-		// Don't kill me for string conversion methods, this is DEBUG ONLY
-
 		start_time = end_time;
 		end_time = SDL_GetTicks();
 	}

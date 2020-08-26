@@ -523,7 +523,82 @@ LIT_METHOD(tsab_graphics_set_shader) {
 	return NULL_VALUE;
 }
 
+LIT_METHOD(tsab_window_title_get) {
+	return OBJECT_VALUE(OBJECT_CONST_STRING(vm->state, SDL_GetWindowTitle(window)));
+}
+
+LIT_METHOD(tsab_window_title_set) {
+	const char* title = LIT_CHECK_STRING(0);
+	SDL_SetWindowTitle(window, title);
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_window_width_get) {
+	int x;
+	int y;
+
+	SDL_GetWindowSize(window, &x, &y);
+	return NUMBER_VALUE(x);
+}
+
+LIT_METHOD(tsab_window_height_get) {
+	int x;
+	int y;
+
+	SDL_GetWindowSize(window, &x, &y);
+	return NUMBER_VALUE(y);
+}
+
+
+LIT_METHOD(tsab_window_set_size) {
+	int width = LIT_CHECK_NUMBER(0);
+	int height = LIT_CHECK_NUMBER(1);
+
+	SDL_SetWindowSize(window, width, height);
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_window_x_get) {
+	int x;
+	int y;
+
+	SDL_GetWindowPosition(window, &x, &y);
+	return NUMBER_VALUE(x);
+}
+
+LIT_METHOD(tsab_window_y_get) {
+	int x;
+	int y;
+
+	SDL_GetWindowPosition(window, &x, &y);
+	return NUMBER_VALUE(y);
+}
+
+
+LIT_METHOD(tsab_window_set_position) {
+	int x = LIT_CHECK_NUMBER(0);
+	int y = LIT_CHECK_NUMBER(1);
+
+	SDL_SetWindowPosition(window, x, y);
+
+	return NULL_VALUE;
+}
+
 void tsab_graphics_bind_api(LitState* state) {
+	LIT_BEGIN_CLASS("Window")
+		LIT_BIND_STATIC_FIELD("title", tsab_window_title_get, tsab_window_title_set)
+
+		LIT_BIND_STATIC_GETTER("width", tsab_window_width_get)
+		LIT_BIND_STATIC_GETTER("height", tsab_window_height_get)
+		LIT_BIND_STATIC_METHOD("setSize", tsab_window_set_size)
+
+		LIT_BIND_STATIC_GETTER("x", tsab_window_x_get)
+		LIT_BIND_STATIC_GETTER("y", tsab_window_y_get)
+		LIT_BIND_STATIC_METHOD("setPosition", tsab_window_set_position)
+	LIT_END_CLASS()
+
 	LIT_BEGIN_CLASS("Graphics")
 		LIT_BIND_STATIC_METHOD("flip", tsab_graphics_flip)
 		LIT_BIND_STATIC_METHOD("clear", tsab_graphics_clear)
