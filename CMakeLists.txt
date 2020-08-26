@@ -29,6 +29,8 @@ else()
 	file(GLOB_RECURSE SOURCE_FILES src/native/*.cpp src/tsab/*.cpp)
 endif()
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
 add_executable(tsab ${SOURCE_FILES})
 
 if (EMSCRIPTEN)

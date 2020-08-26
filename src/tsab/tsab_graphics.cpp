@@ -481,7 +481,7 @@ LIT_METHOD(tsab_graphics_new_font) {
 
 	if (font == nullptr) {
 		std::cerr << "Failed to load font " << name << ": " << TTF_GetError() << std::endl;
-		return -1;
+		return NULL_VALUE;
 	}
 
 	if (active_font == nullptr) {
@@ -489,7 +489,6 @@ LIT_METHOD(tsab_graphics_new_font) {
 	}
 
 	fonts.push_back(font);
-
 	return NUMBER_VALUE(fonts.size() - 1);
 }
 
@@ -507,7 +506,15 @@ LIT_METHOD(tsab_graphics_print) {
 	tsab_shaders_set_textured(true);
 
 	if (active_font == nullptr) {
-		return NULL_VALUE;
+		TTF_Font *font = TTF_OpenFont("default_font.ttf", 12);
+
+		if (font == nullptr) {
+			std::cerr << "Failed to load default font: " << TTF_GetError() << std::endl;
+			return NULL_VALUE;
+		}
+
+		active_font = font;
+		fonts.push_back(font);
 	}
 
 	const char *text = LIT_CHECK_STRING(0);
@@ -517,10 +524,12 @@ LIT_METHOD(tsab_graphics_print) {
 	double sx = LIT_GET_NUMBER(4, 1);
 	double sy = LIT_GET_NUMBER(5, 1);
 
-	SDL_Surface *surface = TTF_RenderUTF8_Blended(active_font, text, current_color);
+	SDL_Surface *surface = TTF_RenderText_Blended(active_font, text, current_color);
 	GPU_Image *image = GPU_CopyImageFromSurface(surface);
-	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2,
-		y + image->h / 2, image->w / 2, image->h / 2, r, sx, sy);
+
+	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
+	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2,y + image->h / 2, image->w / 2, image->h / 2, r, sx, sy);
+
 	SDL_FreeSurface(surface);
 
 	return NULL_VALUE;
