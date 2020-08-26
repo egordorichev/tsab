@@ -141,23 +141,23 @@ static void configure() {
 
 	if (IS_MAP(config)) {
 		LitMap* map = AS_MAP(config);
-		LitValue window = *lit_get_field(state, map, "window");
+		LitValue window = lit_get_map_field(state, map, "window");
 
 		if (IS_MAP(window)) {
 			LitMap* window_map = AS_MAP(window);
-			LitValue value = *lit_get_field(state, window_map, "width");
+			LitValue value = lit_get_map_field(state, window_map, "width");
 
 			if (IS_NUMBER(value)) {
 				window_width = AS_NUMBER(value);
 			}
 
-			value = *lit_get_field(state, window_map, "height");
+			value = lit_get_map_field(state, window_map, "height");
 
 			if (IS_NUMBER(value)) {
 				window_height = AS_NUMBER(value);
 			}
 
-			value = *lit_get_field(state, window_map, "title");
+			value = lit_get_map_field(state, window_map, "title");
 
 			if (IS_STRING(value)) {
 				title = AS_CSTRING(value);

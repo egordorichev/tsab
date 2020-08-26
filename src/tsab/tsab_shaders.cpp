@@ -8,6 +8,7 @@ static int active_shader = -1;
 static std::vector<Uint32> shaders_separate;
 static std::vector<GPU_ShaderBlock> shader_blocks;
 static std::vector<Uint32> shaders;
+static bool textured_state = false;
 
 static const char *default_vert =
 	"attribute vec3 gpu_Vertex;\n"
@@ -42,7 +43,14 @@ Uint32 tsab_shaders_get_active_shader() {
 	return shaders[active_shader];
 }
 
-LIT_METHOD(tsab_shaders_new) {
+/*
+ * Lit-side api
+ */
+
+LIT_METHOD(tsab_shader_constructor) {
+	const char *name = LIT_CHECK_STRING(0);
+	bool compile = LIT_GET_BOOL(1, false);
+
 	Uint32 v = GPU_CompileShader(GPU_VERTEX_SHADER, default_vert);
 
 	if (!v) {
@@ -50,9 +58,6 @@ LIT_METHOD(tsab_shaders_new) {
 	}
 
 	shaders_separate.push_back(v);
-
-	const char *name = LIT_CHECK_STRING(0);
-	bool compile = LIT_GET_BOOL(1, false);
 	Uint32 f;
 
 	if (compile) {
@@ -75,55 +80,103 @@ LIT_METHOD(tsab_shaders_new) {
 	shader_blocks.push_back(GPU_LoadShaderBlock(p, "gpu_Vertex", "gpu_TexCoord", "gpu_Color", "gpu_ModelViewProjectionMatrix"));
 	shaders.push_back(p);
 
-	return NUMBER_VALUE(shaders.size() - 1);
+	LIT_SET_FIELD("id", shaders.size() - 1);
+	return instance;
 }
 
-LIT_METHOD(tsab_shaders_set) {
-	if (arg_count == 0) {
-		active_shader = -1;
-		GPU_DeactivateShaderProgram();
-
-		return NULL_VALUE;
+void tsab_shaders_enable(int id) {
+	if (id >= -1 && shaders.size() <= id) {
+		return;
 	}
 
-	Uint32 p = (Uint32) LIT_CHECK_NUMBER(0);
+	active_shader = id;
+	GPU_ActivateShaderProgram(shaders[id], &shader_blocks[id]);
+}
 
-	if (p >= -1 && shaders.size() <= p) {
-		return 0;
+void tsab_shaders_disable() {
+	active_shader = -1;
+	GPU_DeactivateShaderProgram();
+}
+
+void tsab_shaders_set_textured(bool textured) {
+	if (textured_state != textured && active_shader > -1) {
+		GPU_SetUniformi(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), textured);
+		textured_state = textured;
 	}
+}
 
-	active_shader = p;
-	GPU_ActivateShaderProgram(shaders[p], &shader_blocks[p]);
+LIT_METHOD(tsab_shader_set_float) {
+	Uint32 p = (Uint32) AS_NUMBER(LIT_GET_FIELD("id"));
+
+	const char *name = LIT_CHECK_STRING(0);
+	float value = (float) LIT_CHECK_NUMBER(1);
+
+	GPU_SetUniformf(GPU_GetUniformLocation(shaders[p], name), value);
 
 	return NULL_VALUE;
 }
 
-LIT_METHOD(tsab_shaders_setFloat) {
-	Uint32 p = (Uint32) LIT_CHECK_NUMBER(0);
-	const char *name = LIT_CHECK_STRING(1);
-	float value = (float) LIT_CHECK_NUMBER(2);
+LIT_METHOD(tsab_shader_set_int) {
+	Uint32 p = (Uint32) AS_NUMBER(LIT_GET_FIELD("id"));
 
-	int location = GPU_GetUniformLocation(shaders[p], name);
+	const char *name = LIT_CHECK_STRING(0);
+	int value = (int) LIT_CHECK_NUMBER(1);
 
-	if (location == -1) {
-		std::cout << "Unknown variable '" << name << "'!\n";
-	} else {
-		GPU_SetUniformf(location, value);
-	}
+	GPU_SetUniformi(GPU_GetUniformLocation(shaders[p], name), value);
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_shader_set_vec2) {
+	Uint32 p = (Uint32) AS_NUMBER(LIT_GET_FIELD("id"));
+
+	const char *name = LIT_CHECK_STRING(0);
+	float r = (float) LIT_CHECK_NUMBER(1);
+	float g = (float) LIT_CHECK_NUMBER(2);
+
+	float values[] = { r, g };
+	GPU_SetUniformfv(GPU_GetUniformLocation(shaders[p], name), 2, 1, (float *) values);
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_shader_set_vec3) {
+	Uint32 p = (Uint32) AS_NUMBER(LIT_GET_FIELD("id"));
+
+	const char *name = LIT_CHECK_STRING(0);
+	float r = (float) LIT_CHECK_NUMBER(1);
+	float g = (float) LIT_CHECK_NUMBER(2);
+	float b = (float) LIT_CHECK_NUMBER(3);
+
+	float values[] = { r, g, b };
+	GPU_SetUniformfv(GPU_GetUniformLocation(shaders[p], name), 3, 1, (float *) values);
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tsab_shader_set_vec4) {
+	Uint32 p = (Uint32) AS_NUMBER(LIT_GET_FIELD("id"));
+
+	const char *name = LIT_CHECK_STRING(0);
+	float r = (float) LIT_CHECK_NUMBER(1);
+	float g = (float) LIT_CHECK_NUMBER(2);
+	float b = (float) LIT_CHECK_NUMBER(3);
+	float a = (float) LIT_CHECK_NUMBER(4);
+
+	float values[] = { r, g, b, a };
+	GPU_SetUniformfv(GPU_GetUniformLocation(shaders[p], name), 4, 1, (float *) values);
 
 	return NULL_VALUE;
 }
 
 void tsab_shaders_bind_api(LitState* state) {
-	LIT_BEGIN_CLASS("Shaders")
-		LIT_BIND_STATIC_METHOD("newShader", tsab_shaders_new)
-		LIT_BIND_STATIC_METHOD("setShader", tsab_shaders_set)
-		LIT_BIND_STATIC_METHOD("setFloat", tsab_shaders_setFloat)
-	LIT_END_CLASS()
+	LIT_BEGIN_CLASS("Shader")
+		LIT_BIND_CONSTRUCTOR(tsab_shader_constructor)
 
-	/*lua_register(L, "tsab_shaders_send_float", tsab_shaders_send_float);
-	lua_register(L, "tsab_shaders_send_int", tsab_shaders_send_int);
-	lua_register(L, "tsab_shaders_send_vec4", tsab_shaders_send_vec4);
-	lua_register(L, "tsab_shaders_send_vec3", tsab_shaders_send_vec3);
-	lua_register(L, "tsab_shaders_send_vec2", tsab_shaders_send_vec2);*/
+		LIT_BIND_METHOD("setFloat", tsab_shader_set_float)
+		LIT_BIND_METHOD("setInt", tsab_shader_set_int)
+		LIT_BIND_METHOD("setVec2", tsab_shader_set_vec2)
+		LIT_BIND_METHOD("setVec3", tsab_shader_set_vec3)
+		LIT_BIND_METHOD("setVec4", tsab_shader_set_vec4)
+	LIT_END_CLASS()
 }

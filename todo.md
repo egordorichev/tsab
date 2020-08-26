@@ -6,7 +6,6 @@
 * window module
 * input: keyPressed, keyReleased, buttonPressed, buttonReleased, mouseMoved, controllerConnected, controllerDisconnected
 * audio
-* shaders
 * hotswap
 * box2d
 * imgui

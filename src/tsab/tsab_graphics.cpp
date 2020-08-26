@@ -279,9 +279,7 @@ LIT_METHOD(tsab_graphics_set_color) {
 }
 
 LIT_METHOD(tsab_graphics_draw) {
-	if (tsab_shaders_get_active() > -1) {
-		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 1);
-	}
+	tsab_shaders_set_textured(true);
 
 	auto *target = current_target == nullptr ? screen : current_target->target;
 
@@ -316,9 +314,7 @@ LIT_METHOD(tsab_graphics_draw) {
 }
 
 LIT_METHOD(tsab_graphics_circle) {
-	if (tsab_shaders_get_active() > -1) {
-	 	GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	}
+	tsab_shaders_set_textured(false);
 
 	double x = LIT_CHECK_NUMBER(0);
 	double y = LIT_CHECK_NUMBER(1);
@@ -335,9 +331,7 @@ LIT_METHOD(tsab_graphics_circle) {
 }
 
 LIT_METHOD(tsab_graphics_rectangle) {
-	if (tsab_shaders_get_active() > -1) {
-		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	}
+	tsab_shaders_set_textured(false);
 
 	double x = LIT_CHECK_NUMBER(0);
 	double y = LIT_CHECK_NUMBER(1);
@@ -355,9 +349,7 @@ LIT_METHOD(tsab_graphics_rectangle) {
 }
 
 LIT_METHOD(tsab_graphics_ellipse) {
-	if (tsab_shaders_get_active() > -1) {
-		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	}
+	tsab_shaders_set_textured(false);
 
 	double x = LIT_CHECK_NUMBER(0);
 	double y = LIT_CHECK_NUMBER(1);
@@ -376,9 +368,7 @@ LIT_METHOD(tsab_graphics_ellipse) {
 }
 
 LIT_METHOD(tsab_graphics_triangle) {
-	if (tsab_shaders_get_active() > -1) {
-		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	}
+	tsab_shaders_set_textured(false);
 
 	double x1 = LIT_CHECK_NUMBER(0);
 	double y1 = LIT_CHECK_NUMBER(1);
@@ -398,9 +388,7 @@ LIT_METHOD(tsab_graphics_triangle) {
 }
 
 LIT_METHOD(tsab_graphics_point) {
-	if (tsab_shaders_get_active() > -1) {
-		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	}
+	tsab_shaders_set_textured(false);
 
 	double x = LIT_CHECK_NUMBER(1);
 	double y = LIT_CHECK_NUMBER(2);
@@ -411,9 +399,7 @@ LIT_METHOD(tsab_graphics_point) {
 }
 
 LIT_METHOD(tsab_graphics_line) {
-	if (tsab_shaders_get_active() > -1) {
-		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 0);
-	}
+	tsab_shaders_set_textured(false);
 
 	double x1 = LIT_CHECK_NUMBER(0);
 	double y1 = LIT_CHECK_NUMBER(1);
@@ -456,9 +442,7 @@ LIT_METHOD(tsab_graphics_set_font) {
 }
 
 LIT_METHOD(tsab_graphics_print) {
-	if (tsab_shaders_get_active() > -1) {
-		GPU_SetUniformf(GPU_GetUniformLocation(tsab_shaders_get_active_shader(), "textured"), 1);
-	}
+	tsab_shaders_set_textured(true);
 
 	if (active_font == nullptr) {
 		return NULL_VALUE;
@@ -523,6 +507,22 @@ LIT_METHOD(tsab_graphics_set_clip) {
 	return NULL_VALUE;
 }
 
+LIT_METHOD(tsab_graphics_set_shader) {
+	if (arg_count == 0) {
+		tsab_shaders_disable();
+		return NULL_VALUE;
+	}
+
+	LitInstance* shader = LIT_CHECK_INSTANCE(0);
+	LitValue id = lit_get_field(vm->state, &shader->fields, "id");
+
+	if (IS_NUMBER(id)) {
+		tsab_shaders_enable((int) AS_NUMBER(id));
+	}
+
+	return NULL_VALUE;
+}
+
 void tsab_graphics_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("Graphics")
 		LIT_BIND_STATIC_METHOD("flip", tsab_graphics_flip)
@@ -547,5 +547,7 @@ void tsab_graphics_bind_api(LitState* state) {
 
 		LIT_BIND_STATIC_METHOD("setCamera", tsab_graphics_set_camera)
 		LIT_BIND_STATIC_METHOD("setClip", tsab_graphics_set_clip)
+
+		LIT_BIND_STATIC_METHOD("setShader", tsab_graphics_set_shader)
 	LIT_END_CLASS()
 }
