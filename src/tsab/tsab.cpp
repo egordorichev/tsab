@@ -25,6 +25,15 @@ static float time_per_frame = 1000.0f / 60;
 static float fps;
 
 static LitMap* configure();
+static LitModule* main_module;
+
+static void error_callback(LitState* state, LitErrorType type, const char* message, va_list args) {
+	fflush(stdout);
+	fprintf(stderr, COLOR_RED);
+	vfprintf(stderr, message, args);
+	fprintf(stderr, "%s\n", COLOR_RESET);
+	fflush(stderr);
+}
 
 bool tsab_init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
@@ -33,6 +42,8 @@ bool tsab_init() {
 	}
 
 	state = lit_new_state();
+	state->error_fn = error_callback;
+
 	lit_open_libraries(state);
 	LitMap* config = configure();
 
@@ -51,7 +62,8 @@ bool tsab_init() {
 	tsab_input_bind_api(state);
 
 	lit_interpret_file(state, "main.lit", false);
-	lit_call_function(state, lit_get_global_function(state, CONST_STRING(state, "init")), NULL, 0);
+	main_module = state->last_module;
+	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "init")), NULL, 0);
 
 	update_string = CONST_STRING(state, "update");
 	render_string = CONST_STRING(state, "render");
@@ -62,7 +74,7 @@ bool tsab_init() {
 }
 
 void tsab_quit() {
-	lit_call_function(state, lit_get_global_function(state, CONST_STRING(state, "destroy")), NULL, 0);
+	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "destroy")), NULL, 0);
 	lit_free_state(state);
 
 	tsab_input_quit();
@@ -85,17 +97,18 @@ bool tsab_frame() {
 		tsab_input_handle_event(&event);
 	}
 
-	LitValue dt = NUMBER_VALUE(delta / 1000.0);
-	LitValue result = lit_call_function(state, lit_get_global_function(state, update_string), &dt, 1).result;
+	float realDelta = delta / 1000.0;
+	LitValue dt = NUMBER_VALUE(realDelta);
+	LitInterpretResult interpret_result = lit_call_function(state, main_module, lit_get_global_function(state, update_string), &dt, 1);
 
-	if (IS_BOOL(result) && AS_BOOL(result)) {
+	if (interpret_result.type == INTERPRET_OK && IS_BOOL(interpret_result.result) && AS_BOOL(interpret_result.result)) {
 		return true;
 	}
 
 	tsab_input_update();
-	tsab_graphics_begin_frame();
+	tsab_graphics_begin_frame(realDelta);
 
-	lit_call_function(state, lit_get_global_function(state, render_string), NULL, 0);
+	lit_call_function(state, main_module, lit_get_global_function(state, render_string), NULL, 0);
 	tsab_graphics_finish_frame();
 
 	return false;

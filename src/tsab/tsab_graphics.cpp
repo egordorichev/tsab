@@ -26,6 +26,7 @@ static std::vector<TTF_Font *> fonts;
 static TTF_Font *active_font;
 static bool pushed = false;
 static bool window_hidden = true;
+static float total_time = 0;
 
 bool tsab_graphics_init(LitState* state, LitMap* config) {
 	int width = 640;
@@ -144,7 +145,8 @@ void tsab_graphics_quit() {
 	SDL_DestroyWindow(window);
 }
 
-void tsab_graphics_begin_frame() {
+void tsab_graphics_begin_frame(float dt) {
+	total_time += dt;
 	GPU_ClearRGBA(screen, bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
 }
 
@@ -531,7 +533,39 @@ LIT_METHOD(tsab_graphics_print) {
 	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2,y + image->h / 2, image->w / 2, image->h / 2, r, sx, sy);
 
 	SDL_FreeSurface(surface);
+	return NULL_VALUE;
+}
 
+LIT_METHOD(tsab_graphics_printf) {
+	tsab_shaders_set_textured(true);
+
+	if (active_font == nullptr) {
+		TTF_Font *font = TTF_OpenFont("default_font.ttf", 12);
+
+		if (font == nullptr) {
+			std::cerr << "Failed to load default font: " << TTF_GetError() << std::endl;
+			return NULL_VALUE;
+		}
+
+		active_font = font;
+		fonts.push_back(font);
+	}
+
+	const char *text = LIT_CHECK_STRING(0);
+	double x = LIT_GET_NUMBER(1, 0);
+	double y = LIT_GET_NUMBER(2, 0);
+	double length = LIT_GET_NUMBER(3, 256);
+	double r = LIT_GET_NUMBER(4, 0);
+	double sx = LIT_GET_NUMBER(5, 1);
+	double sy = LIT_GET_NUMBER(6, 1);
+
+	SDL_Surface *surface = TTF_RenderText_Blended_Wrapped(active_font, text, current_color, length);
+	GPU_Image *image = GPU_CopyImageFromSurface(surface);
+
+	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
+	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2,y + image->h / 2, image->w / 2, image->h / 2, r, sx, sy);
+
+	SDL_FreeSurface(surface);
 	return NULL_VALUE;
 }
 
@@ -639,6 +673,11 @@ LIT_METHOD(tsab_window_restore) {
 LIT_METHOD(tsab_window_raise) {
 	SDL_RaiseWindow(window);
 	return NULL_VALUE;
+
+}
+
+LIT_METHOD(tsab_window_time_get) {
+	return NUMBER_VALUE(total_time);
 }
 
 LIT_METHOD(tsab_window_width_get) {
@@ -710,6 +749,7 @@ void tsab_graphics_bind_api(LitState* state) {
 		LIT_BIND_STATIC_METHOD("restore", tsab_window_restore)
 		LIT_BIND_STATIC_METHOD("raise", tsab_window_raise)
 
+		LIT_BIND_STATIC_GETTER("time", tsab_window_time_get)
 		LIT_BIND_STATIC_GETTER("width", tsab_window_width_get)
 		LIT_BIND_STATIC_GETTER("height", tsab_window_height_get)
 		LIT_BIND_STATIC_METHOD("setSize", tsab_window_set_size)
@@ -740,6 +780,7 @@ void tsab_graphics_bind_api(LitState* state) {
 		LIT_BIND_STATIC_METHOD("newFont", tsab_graphics_new_font)
 		LIT_BIND_STATIC_METHOD("setFont", tsab_graphics_set_font)
 		LIT_BIND_STATIC_METHOD("print", tsab_graphics_print)
+		LIT_BIND_STATIC_METHOD("printf", tsab_graphics_printf)
 
 		LIT_BIND_STATIC_METHOD("setCamera", tsab_graphics_set_camera)
 		LIT_BIND_STATIC_METHOD("setClip", tsab_graphics_set_clip)
