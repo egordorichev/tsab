@@ -43,7 +43,12 @@ add_custom_command(
 	COMMAND embedfile gamecontrollerdb ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt)
 
-add_executable(tsab ${SOURCE_FILES} default_font.c gamecontrollerdb.c)
+add_custom_command(
+	OUTPUT prefix.c
+	COMMAND embedfile prefix ${CMAKE_CURRENT_SOURCE_DIR}/assets/prefix.lit
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/prefix.lit)
+
+add_executable(tsab ${SOURCE_FILES} default_font.c gamecontrollerdb.c prefix.c)
 
 if (EMSCRIPTEN)
 	add_definitions("-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")

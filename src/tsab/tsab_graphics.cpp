@@ -532,11 +532,11 @@ LIT_METHOD(tsab_graphics_print) {
 	double sx = LIT_GET_NUMBER(4, 1);
 	double sy = LIT_GET_NUMBER(5, 1);
 
-	SDL_Surface *surface = TTF_RenderText_Blended(active_font, text, current_color);
+	SDL_Surface *surface = TTF_RenderUTF8_Blended(active_font, text, current_color);
 	GPU_Image *image = GPU_CopyImageFromSurface(surface);
 
 	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
-	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2,y + image->h / 2, image->w / 2, image->h / 2, r, sx, sy);
+	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2.0f, y + image->h / 2.0f,image->w / 2.0f, image->h / 2.0f, r, sx, sy);
 
 	SDL_FreeSurface(surface);
 	return NULL_VALUE;
@@ -561,7 +561,7 @@ LIT_METHOD(tsab_graphics_printf) {
 	GPU_Image *image = GPU_CopyImageFromSurface(surface);
 
 	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
-	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2,y + image->h / 2, image->w / 2, image->h / 2, r, sx, sy);
+	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2.0f, y + image->h / 2.0f,image->w / 2.0f, image->h / 2.0f, r, sx, sy);
 
 	SDL_FreeSurface(surface);
 	return NULL_VALUE;

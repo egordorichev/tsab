@@ -3,10 +3,12 @@
 
 FILE* open_or_exit(const char* fname, const char* mode) {
 	FILE* f = fopen(fname, mode);
+
 	if (f == NULL) {
 		perror(fname);
 		exit(EXIT_FAILURE);
 	}
+
 	return f;
 }
 

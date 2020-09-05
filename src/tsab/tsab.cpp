@@ -44,6 +44,9 @@ static bool handle(LitInterpretResult result) {
 	return true;
 }
 
+extern "C" const char prefix[];
+extern "C" const size_t prefix_len;
+
 bool tsab_init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
 		tsab_report_sdl_error();
@@ -69,6 +72,8 @@ bool tsab_init() {
 	tsab_graphics_bind_api(state);
 	tsab_shaders_bind_api(state);
 	tsab_input_bind_api(state);
+
+	lit_interpret(state, "prefix", (char*) prefix);
 
 	LitInterpretResult result = lit_interpret_file(state, "main.lit", false);
 	main_module = state->last_module;
