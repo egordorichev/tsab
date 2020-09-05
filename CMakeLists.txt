@@ -31,9 +31,19 @@ else()
 	file(GLOB_RECURSE SOURCE_FILES src/native/*.cpp src/tsab/*.cpp)
 endif()
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+add_executable(embedfile util/embed_file.c)
 
-add_executable(tsab ${SOURCE_FILES})
+add_custom_command(
+	OUTPUT default_font.c
+	COMMAND embedfile default_font ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf)
+
+add_custom_command(
+	OUTPUT gamecontrollerdb.c
+	COMMAND embedfile gamecontrollerdb ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt)
+
+add_executable(tsab ${SOURCE_FILES} default_font.c gamecontrollerdb.c)
 
 if (EMSCRIPTEN)
 	add_definitions("-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")

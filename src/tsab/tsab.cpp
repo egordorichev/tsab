@@ -35,6 +35,15 @@ static void error_callback(LitState* state, LitErrorType type, const char* messa
 	fflush(stderr);
 }
 
+static bool handle(LitInterpretResult result) {
+	if (result.type == INTERPRET_OK || result.type == INTERPRET_INVALID) {
+		return false;
+	}
+
+	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "handleError")), &result.result, 1);
+	return true;
+}
+
 bool tsab_init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
 		tsab_report_sdl_error();
@@ -61,15 +70,17 @@ bool tsab_init() {
 	tsab_shaders_bind_api(state);
 	tsab_input_bind_api(state);
 
-	lit_interpret_file(state, "main.lit", false);
+	LitInterpretResult result = lit_interpret_file(state, "main.lit", false);
 	main_module = state->last_module;
-	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "init")), NULL, 0);
+
+	if (!handle(result)) {
+		lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "init")), NULL, 0);
+	}
 
 	update_string = CONST_STRING(state, "update");
 	render_string = CONST_STRING(state, "render");
 
 	tsab_graphics_get_ready();
-
 	return true;
 }
 
@@ -105,10 +116,12 @@ bool tsab_frame() {
 		return true;
 	}
 
+	handle(interpret_result);
+
 	tsab_input_update();
 	tsab_graphics_begin_frame(realDelta);
 
-	lit_call_function(state, main_module, lit_get_global_function(state, render_string), NULL, 0);
+	handle(lit_call_function(state, main_module, lit_get_global_function(state, render_string), NULL, 0));
 	tsab_graphics_finish_frame();
 
 	return false;

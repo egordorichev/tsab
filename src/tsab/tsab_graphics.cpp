@@ -477,7 +477,7 @@ LIT_METHOD(tsab_graphics_line) {
 
 LIT_METHOD(tsab_graphics_new_font) {
 	const char *name = LIT_CHECK_STRING(0);
-	int size = LIT_GET_NUMBER(1, 14);
+	int size = LIT_GET_NUMBER(1, 12);
 
 	TTF_Font *font = TTF_OpenFont(name, size);
 
@@ -504,19 +504,25 @@ LIT_METHOD(tsab_graphics_set_font) {
 	return NULL_VALUE;
 }
 
+extern "C" const char default_font[];
+extern "C" const size_t default_font_len;
+
+static void load_font() {
+	TTF_Font *font = TTF_OpenFontRW(SDL_RWFromConstMem((void*) default_font, default_font_len), 0, 12);
+
+	if (font == nullptr) {
+		std::cerr << "Failed to load default font: " << TTF_GetError() << std::endl;
+	}
+
+	active_font = font;
+	fonts.push_back(font);
+}
+
 LIT_METHOD(tsab_graphics_print) {
 	tsab_shaders_set_textured(true);
 
 	if (active_font == nullptr) {
-		TTF_Font *font = TTF_OpenFont("default_font.ttf", 12);
-
-		if (font == nullptr) {
-			std::cerr << "Failed to load default font: " << TTF_GetError() << std::endl;
-			return NULL_VALUE;
-		}
-
-		active_font = font;
-		fonts.push_back(font);
+		load_font();
 	}
 
 	const char *text = LIT_CHECK_STRING(0);
@@ -540,15 +546,7 @@ LIT_METHOD(tsab_graphics_printf) {
 	tsab_shaders_set_textured(true);
 
 	if (active_font == nullptr) {
-		TTF_Font *font = TTF_OpenFont("default_font.ttf", 12);
-
-		if (font == nullptr) {
-			std::cerr << "Failed to load default font: " << TTF_GetError() << std::endl;
-			return NULL_VALUE;
-		}
-
-		active_font = font;
-		fonts.push_back(font);
+		load_font();
 	}
 
 	const char *text = LIT_CHECK_STRING(0);
