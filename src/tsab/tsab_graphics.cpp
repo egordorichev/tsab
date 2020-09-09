@@ -127,6 +127,16 @@ bool tsab_graphics_init(LitState* state, LitMap* config) {
 	return true;
 }
 
+void tsab_graphics_handle_event(SDL_Event* event) {
+	if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_RESIZED) {
+		int w;
+		int h;
+
+		SDL_GetWindowSize(window, &w, &h);
+		GPU_SetWindowResolution(w, h);
+	}
+}
+
 bool tsab_graphics_set_title(const char* title) {
 	SDL_SetWindowTitle(window, title);
 }

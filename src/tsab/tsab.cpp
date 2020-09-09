@@ -132,6 +132,7 @@ bool tsab_frame() {
 		}
 
 		tsab_input_handle_event(&event);
+		tsab_graphics_handle_event(&event);
 	}
 
 	float realDelta = delta / 1000.0;

@@ -1,6 +1,5 @@
 # todo
 
-* window content sticks to the bottom of the screen
 * fps still performs weirdly (sudden jumps, after a while percision of shader coloring drops?)
 * fix config (it relies on maps but the shortcut is objects now?)
 
