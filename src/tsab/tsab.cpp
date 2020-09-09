@@ -119,7 +119,7 @@ void tsab_quit() {
 	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "destroy")), NULL, 0);
 	lit_free_state(state);
 
-	tsab_physics_quit();
+	tsab_physics_quit(state);
 	tsab_input_quit();
 	tsab_shaders_quit();
 	tsab_graphics_quit();
@@ -202,5 +202,5 @@ static LitMap* configure() {
 }
 
 float tsab_get_dt() {
-	return delta;
+	return delta / 1000.0;
 }

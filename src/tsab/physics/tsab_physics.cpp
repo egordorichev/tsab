@@ -7,15 +7,32 @@
 static b2World* world;
 static DebugView debug;
 
-static void destroy_world() {
+static b2Body** extract_body_data_from_instance(LitState* state, LitInstance* instance) {
+	LitValue data;
+
+	if (!lit_table_get(&instance->fields, CONST_STRING(state, "_data"), &data)) {
+		return NULL;
+	}
+
+	return (b2Body**) &AS_USERDATA(data)->data;
+}
+
+static void destroy_world(LitState* state) {
 	if (world != nullptr) {
+		b2Body* body = world->GetBodyList();
+
+		while (body != nullptr) {
+			*extract_body_data_from_instance(state, (LitInstance*) body->GetUserData()) = nullptr;
+			body = body->GetNext();
+		}
+
 		delete world;
 		world = nullptr;
 	}
 }
 
-void tsab_physics_quit() {
-	destroy_world();
+void tsab_physics_quit(LitState* state) {
+	destroy_world(state);
 }
 
 /*
@@ -29,12 +46,23 @@ static b2Body* extract_body_data(LitState* state, LitValue instance) {
 		return NULL;
 	}
 
-	return (b2Body*) AS_USERDATA(data)->data;
+	b2Body* body = (b2Body*) AS_USERDATA(data)->data;
+
+	if (body == nullptr) {
+		lit_runtime_error_exiting(state->vm, "Attempt to access invalid body");
+	}
+
+	return body;
 }
 
 void cleanup_body(LitState* state, LitUserdata* data) {
 	if (world != nullptr) {
-		world->DestroyBody((b2Body*) data->data);
+		b2Body* body = (b2Body*) data->data;
+
+		if (body != nullptr) {
+			body->SetUserData(nullptr);
+			world->DestroyBody(body);
+		}
 	}
 }
 
@@ -44,6 +72,9 @@ LIT_METHOD(body_constructor) {
 	}
 
 	b2BodyDef def;
+	def.linearDamping = 0.1f;
+	def.angularDamping = 0.1f;
+
 	const char* type = AS_CSTRING(args[1]);
 
 	if (memcmp(type, "dynamic", 7) == 0) {
@@ -56,8 +87,6 @@ LIT_METHOD(body_constructor) {
 		lit_runtime_error_exiting(vm, "Unknown body type %s", type);
 	}
 
-	def.allowSleep = false;
-	def.gravityScale = 1;
 	b2Body* body = world->CreateBody(&def);
 
 	LitUserdata* userdata = lit_create_userdata(vm->state, 0);
@@ -65,10 +94,11 @@ LIT_METHOD(body_constructor) {
 	userdata->data = body;
 	lit_table_set(vm->state, &AS_INSTANCE(instance)->fields, CONST_STRING(vm->state, "_data"), OBJECT_VALUE(userdata));
 
-	body->SetUserData((void*) instance);
+	body->SetUserData((void*) AS_INSTANCE(instance));
 
 	b2FixtureDef fixture;
 	fixture.density = 1;
+	fixture.restitution = 0.6;
 
 	const char* preset = AS_CSTRING(args[0]);
 
@@ -102,10 +132,19 @@ LIT_METHOD(body_constructor) {
 		fixture.shape = &polygonShape;
 		body->CreateFixture(&fixture);
 	} else if (memcmp(preset, "circle", 6) == 0) {
-		float x = LIT_CHECK_NUMBER(2);
-		float y = LIT_CHECK_NUMBER(3);
-		float r = LIT_CHECK_NUMBER(4);
-		fixture.isSensor = LIT_GET_BOOL(5, false);
+		float x, y, r;
+
+		if (arg_count < 4 || (arg_count < 5 && IS_BOOL(args[3]))) {
+			x = 0;
+			y = 0;
+			r = LIT_CHECK_NUMBER(2);
+			fixture.isSensor = LIT_GET_BOOL(3, false);
+		} else {
+			x = LIT_CHECK_NUMBER(2);
+			y = LIT_CHECK_NUMBER(3);
+			r = LIT_CHECK_NUMBER(4);
+			fixture.isSensor = LIT_GET_BOOL(5, false);
+		}
 
 		b2CircleShape circleShape;
 
@@ -118,6 +157,11 @@ LIT_METHOD(body_constructor) {
 	} else {
 		lit_runtime_error_exiting(vm, "Unknown body preset %s", preset);
 	}
+
+	b2MassData massData;
+	body->GetMassData(&massData);
+	massData.mass = 50; //Just tweak me
+	massData.I = 1; //Just never set me to 0 if you don't want to have nAn propagating
 
 	return instance;
 }
@@ -163,6 +207,16 @@ LIT_METHOD(body_angle) {
 	return args[0];
 }
 
+LIT_METHOD(body_apply_force) {
+	b2Body* body = extract_body_data(vm->state, instance);
+
+	float x = LIT_CHECK_NUMBER(0);
+	float y = LIT_CHECK_NUMBER(1);
+
+	body->SetLinearVelocity(b2Vec2(x, y));
+	return NULL_VALUE;
+}
+
 /*
  * Physics class
  */
@@ -186,7 +240,7 @@ LIT_METHOD(physics_new_world) {
 }
 
 LIT_METHOD(physics_destroy_world) {
-	destroy_world();
+	destroy_world(vm->state);
 	return NULL_VALUE;
 }
 
@@ -214,6 +268,8 @@ void tsab_physics_bind_api(LitState* state) {
 		LIT_BIND_FIELD("x", body_x, body_x)
 		LIT_BIND_FIELD("y", body_y, body_y)
 		LIT_BIND_FIELD("angle", body_angle, body_angle)
+
+		LIT_BIND_METHOD("applyForce", body_apply_force)
 	LIT_END_CLASS()
 
 	LIT_BEGIN_CLASS("Physics")

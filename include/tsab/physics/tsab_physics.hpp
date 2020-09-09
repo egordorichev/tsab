@@ -4,6 +4,6 @@
 #include <tsab/tsab_common.hpp>
 
 void tsab_physics_bind_api(LitState* state);
-void tsab_physics_quit();
+void tsab_physics_quit(LitState* state);
 
 #endif
