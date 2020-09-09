@@ -2,6 +2,7 @@
 #include <tsab/tsab_common.hpp>
 #include <tsab/tsab_graphics.hpp>
 #include <tsab/tsab_shaders.hpp>
+#include <tsab/tsab_audio.hpp>
 #include <tsab/tsab_input.hpp>
 
 #include <lit/lit.hpp>
@@ -76,6 +77,7 @@ bool tsab_init() {
 		return false;
 	}
 
+	tsab_audio_init();
 	tsab_input_init();
 
 	TTF_Init();
@@ -84,6 +86,7 @@ bool tsab_init() {
 	tsab_graphics_bind_api(state);
 	tsab_shaders_bind_api(state);
 	tsab_input_bind_api(state);
+	tsab_audio_bind_api(state);
 
 	lit_interpret(state, "prefix", (char*) prefix);
 
@@ -117,6 +120,7 @@ void tsab_quit() {
 	tsab_input_quit();
 	tsab_shaders_quit();
 	tsab_graphics_quit();
+	tsab_audio_quit();
 
 	IMG_Quit();
 	TTF_Quit();

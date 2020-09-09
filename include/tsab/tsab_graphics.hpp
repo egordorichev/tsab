@@ -6,13 +6,11 @@
 
 bool tsab_graphics_init(LitState* state, LitMap* config);
 void tsab_graphics_handle_event(SDL_Event* event);
-
-bool tsab_graphics_set_title(const char* title);
-void tsab_graphics_clear_screen();
-
 void tsab_graphics_get_ready();
 void tsab_graphics_quit();
 
+bool tsab_graphics_set_title(const char* title);
+void tsab_graphics_clear_screen();
 void tsab_graphics_begin_frame(float dt);
 void tsab_graphics_finish_frame();
 
