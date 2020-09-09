@@ -213,8 +213,160 @@ LIT_METHOD(body_apply_force) {
 	float x = LIT_CHECK_NUMBER(0);
 	float y = LIT_CHECK_NUMBER(1);
 
-	body->SetLinearVelocity(b2Vec2(x, y));
+	if (arg_count == 2) {
+		body->ApplyForceToCenter(b2Vec2(x, y), true);
+	} else {
+		float cx = LIT_CHECK_NUMBER(2);
+		float cy = LIT_CHECK_NUMBER(3);
+
+		body->ApplyForce(b2Vec2(x, y), b2Vec2(cx, cy), true);
+	}
+
 	return NULL_VALUE;
+}
+
+LIT_METHOD(body_apply_impulse) {
+	b2Body* body = extract_body_data(vm->state, instance);
+
+	float x = LIT_CHECK_NUMBER(0);
+	float y = LIT_CHECK_NUMBER(1);
+
+	if (arg_count == 2) {
+		body->ApplyLinearImpulseToCenter(b2Vec2(x, y), true);
+	} else {
+		float cx = LIT_CHECK_NUMBER(2);
+		float cy = LIT_CHECK_NUMBER(3);
+
+		body->ApplyLinearImpulse(b2Vec2(x, y), b2Vec2(cx, cy), true);
+	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(body_bounciness) {
+	b2Body* body = extract_body_data(vm->state, instance);
+	float bounciness = LIT_CHECK_NUMBER(0);
+	b2Fixture* fixture = body->GetFixtureList();
+
+	while (fixture != nullptr) {
+		fixture->SetRestitution(bounciness);
+		fixture = fixture->GetNext();
+	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(body_density) {
+	b2Body* body = extract_body_data(vm->state, instance);
+	float density = LIT_CHECK_NUMBER(0);
+	b2Fixture* fixture = body->GetFixtureList();
+
+	while (fixture != nullptr) {
+		fixture->SetDensity(density);
+		fixture = fixture->GetNext();
+	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(body_friction) {
+	b2Body* body = extract_body_data(vm->state, instance);
+	float friction = LIT_CHECK_NUMBER(0);
+	b2Fixture* fixture = body->GetFixtureList();
+
+	while (fixture != nullptr) {
+		fixture->SetFriction(friction);
+		fixture = fixture->GetNext();
+	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(body_sensor) {
+	b2Body* body = extract_body_data(vm->state, instance);
+	bool sensor = LIT_CHECK_BOOL(0);
+	b2Fixture* fixture = body->GetFixtureList();
+
+	while (fixture != nullptr) {
+		fixture->SetSensor(sensor);
+		fixture = fixture->GetNext();
+	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(body_bullet) {
+	b2Body* body = extract_body_data(vm->state, instance);
+
+	if (arg_count == 0) {
+		return BOOL_VALUE(body->IsBullet());
+	}
+
+	bool bullet = LIT_CHECK_BOOL(0);
+	body->SetBullet(bullet);
+	return args[0];
+}
+
+LIT_METHOD(body_linear_damping) {
+	b2Body* body = extract_body_data(vm->state, instance);
+
+	if (arg_count == 0) {
+		return NUMBER_VALUE(body->GetLinearDamping());
+	}
+
+	float damping = LIT_CHECK_NUMBER(0);
+	body->SetLinearDamping(damping);
+	return args[0];
+}
+
+LIT_METHOD(body_angular_damping) {
+	b2Body* body = extract_body_data(vm->state, instance);
+
+	if (arg_count == 0) {
+		return NUMBER_VALUE(body->GetAngularDamping());
+	}
+
+	float damping = LIT_CHECK_NUMBER(0);
+	body->SetAngularDamping(damping);
+	return args[0];
+}
+
+LIT_METHOD(body_angular_velocity) {
+	b2Body* body = extract_body_data(vm->state, instance);
+
+	if (arg_count == 0) {
+		return NUMBER_VALUE(body->GetAngularVelocity());
+	}
+
+	float vel = LIT_CHECK_NUMBER(0);
+	body->SetAngularVelocity(vel);
+	return args[0];
+}
+
+LIT_METHOD(body_velocity_x) {
+	b2Body* body = extract_body_data(vm->state, instance);
+	b2Vec2 velocity = body->GetLinearVelocity();
+
+	if (arg_count == 0) {
+		return NUMBER_VALUE(velocity.x);
+	}
+
+	velocity.x = LIT_CHECK_NUMBER(0);
+	body->SetLinearVelocity(velocity);
+	return args[0];
+}
+
+LIT_METHOD(body_velocity_y) {
+	b2Body* body = extract_body_data(vm->state, instance);
+	b2Vec2 velocity = body->GetLinearVelocity();
+
+	if (arg_count == 0) {
+		return NUMBER_VALUE(velocity.y);
+	}
+
+	velocity.y = LIT_CHECK_NUMBER(0);
+	body->SetLinearVelocity(velocity);
+	return args[0];
 }
 
 /*
@@ -268,8 +420,20 @@ void tsab_physics_bind_api(LitState* state) {
 		LIT_BIND_FIELD("x", body_x, body_x)
 		LIT_BIND_FIELD("y", body_y, body_y)
 		LIT_BIND_FIELD("angle", body_angle, body_angle)
+		LIT_BIND_FIELD("bullet", body_bullet, body_bullet)
+		LIT_BIND_FIELD("linearDamping", body_linear_damping, body_linear_damping)
+		LIT_BIND_FIELD("angularDamping", body_angular_damping, body_angular_damping)
+		LIT_BIND_FIELD("angularVelocity", body_angular_velocity, body_angular_velocity)
+		LIT_BIND_FIELD("velocityX", body_velocity_x, body_velocity_x)
+		LIT_BIND_FIELD("velocityY", body_velocity_y, body_velocity_y)
+
+		LIT_BIND_SETTER("bounciness", body_bounciness)
+		LIT_BIND_SETTER("friction", body_friction)
+		LIT_BIND_SETTER("density", body_density)
+		LIT_BIND_SETTER("sensor", body_sensor)
 
 		LIT_BIND_METHOD("applyForce", body_apply_force)
+		LIT_BIND_METHOD("applyImpulse", body_apply_impulse)
 	LIT_END_CLASS()
 
 	LIT_BEGIN_CLASS("Physics")
