@@ -3,6 +3,9 @@
 #include <tsab/tsab.hpp>
 
 #include <box2d/box2d.h>
+#include <SDL2/SDL.h>
+
+#include <vector>
 
 static b2World* world;
 static DebugView debug;
@@ -24,6 +27,14 @@ static void destroy_world(LitState* state) {
 		while (body != nullptr) {
 			*extract_body_data_from_instance(state, (LitInstance*) body->GetUserData()) = nullptr;
 			body = body->GetNext();
+		}
+
+		b2Joint* joint = world->GetJointList();
+
+		while (joint != nullptr) {
+			b2Joint* next = joint->GetNext();
+			world->DestroyJoint(joint);
+			joint = next;
 		}
 
 		delete world;
@@ -386,7 +397,7 @@ LIT_METHOD(physics_new_world) {
 	world->SetAllowSleeping(allow_sleep);
 	world->SetDebugDraw(&debug);
 
-	debug.SetFlags(b2Draw::e_shapeBit);
+	debug.SetFlags(b2Draw::e_shapeBit | b2Draw::e_jointBit);
 
 	return NULL_VALUE;
 }
@@ -409,6 +420,35 @@ LIT_METHOD(physics_render) {
 	if (world != nullptr) {
 		world->DebugDraw();
 	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(physics_join) {
+	if (world == nullptr) {
+		return NULL_VALUE;
+	}
+
+	const char* type = LIT_CHECK_STRING(0);
+	LitInstance* a = LIT_CHECK_INSTANCE(1);
+	LitInstance* b = LIT_CHECK_INSTANCE(2);
+
+	b2Body* body_a = *extract_body_data_from_instance(vm->state, a);
+	b2Body* body_b = *extract_body_data_from_instance(vm->state, b);
+
+	b2DistanceJointDef def;
+
+	def.bodyA = body_a;
+	def.bodyB = body_b;
+	def.length = 128;
+	def.maxLength = 164;
+	def.minLength = 128;
+	def.stiffness = 1;
+	def.localAnchorA = body_a->GetLocalCenter();
+	def.localAnchorB = body_b->GetLocalCenter();
+	def.collideConnected = false;
+
+	world->CreateJoint(&def);
 
 	return NULL_VALUE;
 }
@@ -441,5 +481,6 @@ void tsab_physics_bind_api(LitState* state) {
 		LIT_BIND_STATIC_METHOD("destroyWorld", physics_destroy_world)
 		LIT_BIND_STATIC_METHOD("update", physics_update)
 		LIT_BIND_STATIC_METHOD("render", physics_render)
+		LIT_BIND_STATIC_METHOD("join", physics_join)
 	LIT_END_CLASS()
 }

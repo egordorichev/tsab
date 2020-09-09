@@ -222,7 +222,7 @@ void tsab_input_handle_event(SDL_Event *event) {
 	}
 }
 
-LIT_METHOD(tsab_input_get_axis) {
+LIT_METHOD(input_get_axis) {
 	if (controller == nullptr) {
 		return FALSE_VALUE;
 	}
@@ -238,20 +238,23 @@ LIT_METHOD(tsab_input_get_axis) {
 	}
 }
 
-LIT_METHOD(tsab_input_get_mouse_position) {
+LIT_METHOD(input_mouse_x) {
 	int x = 0;
 	int y = 0;
 
 	SDL_GetMouseState(&x, &y);
-
-	// fixme: what you gotta do?
-	// lua_pushnumber(L, x);
-	// lua_pushnumber(L, y);
-
-	return NULL_VALUE;
+	return NUMBER_VALUE(x);
 }
 
-LIT_METHOD(tsab_input_was_released) {
+LIT_METHOD(input_mouse_y) {
+	int x = 0;
+	int y = 0;
+
+	SDL_GetMouseState(&x, &y);
+	return NUMBER_VALUE(y);
+}
+
+LIT_METHOD(input_was_released) {
 	const char *key = LIT_CHECK_STRING(0);
 
 	if (strstr(key, "controller") != nullptr) {
@@ -295,7 +298,7 @@ LIT_METHOD(tsab_input_was_released) {
 	return FALSE_VALUE;
 }
 
-LIT_METHOD(tsab_input_is_down) {
+LIT_METHOD(input_is_down) {
 	const char *key = LIT_CHECK_STRING(0);
 
 	if (strstr(key, "controller") != nullptr) {
@@ -334,7 +337,7 @@ LIT_METHOD(tsab_input_is_down) {
 	return FALSE_VALUE;
 }
 
-LIT_METHOD(tsab_input_was_pressed) {
+LIT_METHOD(input_was_pressed) {
 	const char *key = LIT_CHECK_STRING(0);
 
 	if (strstr(key, "controller") != nullptr) {
@@ -378,10 +381,12 @@ LIT_METHOD(tsab_input_was_pressed) {
 
 void tsab_input_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("Input")
-		LIT_BIND_STATIC_METHOD("getMousePosition", tsab_input_get_mouse_position);
-		LIT_BIND_STATIC_METHOD("isDown", tsab_input_is_down);
-		LIT_BIND_STATIC_METHOD("wasReleased", tsab_input_was_released);
-		LIT_BIND_STATIC_METHOD("wasPressed", tsab_input_was_pressed);
-		LIT_BIND_STATIC_METHOD("getAxis", tsab_input_get_axis);
+		LIT_BIND_STATIC_GETTER("mouseX", input_mouse_x);
+		LIT_BIND_STATIC_GETTER("mouseY", input_mouse_y);
+
+		LIT_BIND_STATIC_METHOD("isDown", input_is_down);
+		LIT_BIND_STATIC_METHOD("wasReleased", input_was_released);
+		LIT_BIND_STATIC_METHOD("wasPressed", input_was_pressed);
+		LIT_BIND_STATIC_METHOD("getAxis", input_get_axis);
 	LIT_END_CLASS()
 }

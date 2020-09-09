@@ -105,7 +105,7 @@ bool tsab_init() {
 	tsab = AS_INSTANCE(value);
 
 	if (!handle(result)) {
-		call_tsab_method(CONST_STRING(state, "init"), NULL, 0);
+		handle(call_tsab_method(CONST_STRING(state, "init"), NULL, 0));
 	}
 
 	update_string = CONST_STRING(state, "update");
