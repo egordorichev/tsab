@@ -11,10 +11,12 @@
 #include <SDL2/SDL_image.h>
 
 #include <cstring>
+#include <iostream>
 
 static LitState* state;
 static SDL_Event event;
 
+static LitInstance* tsab;
 static LitString* update_string;
 static LitString* render_string;
 
@@ -35,12 +37,22 @@ static void error_callback(LitState* state, LitErrorType type, const char* messa
 	fflush(stderr);
 }
 
+static LitInterpretResult call_tsab_method(LitString* name, LitValue* args, uint arg_count) {
+	LitValue method;
+
+	if (lit_table_get(&tsab->fields, name, &method)) {
+		return lit_call(state, main_module, method, args, arg_count);
+	}
+
+	return (LitInterpretResult) { INTERPRET_INVALID, NULL_VALUE };
+}
+
 static bool handle(LitInterpretResult result) {
 	if (result.type == INTERPRET_OK || result.type == INTERPRET_INVALID) {
 		return false;
 	}
 
-	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "handleError")), &result.result, 1);
+	call_tsab_method(CONST_STRING(state, "handleError"), &result.result, 1);
 	return true;
 }
 
@@ -78,8 +90,17 @@ bool tsab_init() {
 	LitInterpretResult result = lit_interpret_file(state, "main.lit", false);
 	main_module = state->last_module;
 
+	LitValue value = lit_get_global(state, CONST_STRING(state, "tsab"));
+
+	if (!IS_INSTANCE(value)) {
+		std::cout << "Failed to find tsab instance\n";
+		return false;
+	}
+
+	tsab = AS_INSTANCE(value);
+
 	if (!handle(result)) {
-		lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "init")), NULL, 0);
+		call_tsab_method(CONST_STRING(state, "init"), NULL, 0);
 	}
 
 	update_string = CONST_STRING(state, "update");
@@ -115,7 +136,7 @@ bool tsab_frame() {
 
 	float realDelta = delta / 1000.0;
 	LitValue dt = NUMBER_VALUE(realDelta);
-	LitInterpretResult interpret_result = lit_call_function(state, main_module, lit_get_global_function(state, update_string), &dt, 1);
+	LitInterpretResult interpret_result = call_tsab_method(update_string, &dt, 1);
 
 	if (interpret_result.type == INTERPRET_OK && IS_BOOL(interpret_result.result) && AS_BOOL(interpret_result.result)) {
 		return true;
@@ -126,7 +147,7 @@ bool tsab_frame() {
 	tsab_input_update();
 	tsab_graphics_begin_frame(realDelta);
 
-	handle(lit_call_function(state, main_module, lit_get_global_function(state, render_string), NULL, 0));
+	handle(call_tsab_method(render_string, NULL, 0));
 	tsab_graphics_finish_frame();
 
 	return false;

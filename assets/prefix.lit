@@ -1,7 +1,8 @@
-tsab = new Object()
-var error
+tsab = {}
 
+var error
 const padding = 25
+
 const colors = [
 	"#1e1e2c",
 	"#f0a3a3",
@@ -20,7 +21,7 @@ function drawText(str, x, y, color, f) {
 	}
 }
 
-export function handleError(err) {
+function tsab.handleError(err) {
 	error = err
 
 	Graphics.setCanvas()
@@ -28,12 +29,12 @@ export function handleError(err) {
 	Graphics.setColor(255)
 	Graphics.setCamera()
 	
-	render = () => {
+	tsab.render = () => {
 		drawText("An error has occurred", padding, padding, colors[1])
 		drawText(error, padding, padding + 32, colors[4], Window.width - padding * 2)
 	}
 
-	update = () => {
+	tsab.update = () => {
 		return Input.wasPressed("escape")
 	}
 }
