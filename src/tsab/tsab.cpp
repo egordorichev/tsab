@@ -22,8 +22,8 @@ static LitInstance* tsab;
 static LitString* update_string;
 static LitString* render_string;
 
-static Uint32 start_time;
-static Uint32 end_time;
+static int start_time;
+static int end_time;
 static float delta;
 static float time_per_frame = 1000.0f / 60;
 static float fps;

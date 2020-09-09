@@ -7,11 +7,10 @@
  * raycasting
 }
 
-* fix timestep
-
 * fix config (it relies on maps but the shortcut is objects now?)
 * html5: embed config and main.lbc or smth
 
+* rendering rotated rect?
 * input callbacks?: keyPressed, keyReleased, buttonPressed, buttonReleased, mouseMoved, controllerConnected, controllerDisconnected
 * imgui
 * engine error reporting (audio failed, etc)

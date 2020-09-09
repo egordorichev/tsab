@@ -72,7 +72,7 @@ void DebugView::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2
 }
 
 void DebugView::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
-
+	GPU_Line(tsab_graphics_get_current_target(), p1.x + 0.5, p1.x + 0.5, p2.x + 0.5, p2.y + 0.5, { (Uint8) (color.r * 255), (Uint8) (color.g * 255), (Uint8) (color.b * 255), (Uint8) (color.a * 255) });
 }
 
 void DebugView::DrawTransform(const b2Transform& xf) {
