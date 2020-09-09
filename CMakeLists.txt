@@ -50,10 +50,14 @@ add_custom_command(
 
 add_executable(tsab ${SOURCE_FILES} default_font.c gamecontrollerdb.c prefix.c)
 
+find_package(Box2D REQUIRED)
+
 if (EMSCRIPTEN)
 	add_definitions("-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")
 	set_target_properties(tsab PROPERTIES LINK_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")
-	target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.a ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.bc)
+
+	include_directories(${BOX2D_INCLUDE_DIR})
+	target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.a ${BOX2D_LIBRARY} ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.bc)
 else()
 	find_package(SDL2 REQUIRED)
 	find_package(SDL2_ttf REQUIRED)
@@ -62,6 +66,6 @@ else()
 	find_package(OpenGL REQUIRED)
 	find_package(GLUT REQUIRED)
 
-	include_directories(${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
-	target_link_libraries(tsab lit ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY})
+	include_directories(${BOX2D_INCLUDE_DIR} ${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
+	target_link_libraries(tsab lit ${BOX2D_LIBRARY} ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY})
 endif()

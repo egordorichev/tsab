@@ -4,6 +4,7 @@
 #include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_audio.hpp>
 #include <tsab/tsab_input.hpp>
+#include <tsab/physics/tsab_physics.hpp>
 
 #include <lit/lit.hpp>
 
@@ -87,6 +88,7 @@ bool tsab_init() {
 	tsab_shaders_bind_api(state);
 	tsab_input_bind_api(state);
 	tsab_audio_bind_api(state);
+	tsab_physics_bind_api(state);
 
 	lit_interpret(state, "prefix", (char*) prefix);
 
@@ -117,6 +119,7 @@ void tsab_quit() {
 	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "destroy")), NULL, 0);
 	lit_free_state(state);
 
+	tsab_physics_quit();
 	tsab_input_quit();
 	tsab_shaders_quit();
 	tsab_graphics_quit();
@@ -196,4 +199,8 @@ static LitMap* configure() {
 	}
 
 	return nullptr;
+}
+
+float tsab_get_dt() {
+	return delta;
 }

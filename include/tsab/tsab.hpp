@@ -7,4 +7,6 @@ void tsab_quit();
 void tsab_loop();
 bool tsab_frame();
 
+float tsab_get_dt();
+
 #endif
