@@ -4,6 +4,7 @@
 #include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_audio.hpp>
 #include <tsab/tsab_input.hpp>
+#include <tsab/tsab_ui.hpp>
 #include <tsab/physics/tsab_physics.hpp>
 
 #include <lit/lit.hpp>
@@ -65,7 +66,7 @@ extern "C" const char prefix[];
 #endif
 
 bool tsab_init() {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		tsab_report_sdl_error();
 		return false;
 	}
@@ -81,6 +82,7 @@ bool tsab_init() {
 		return false;
 	}
 
+	tsab_ui_init();
 	tsab_audio_init();
 	tsab_input_init();
 
@@ -92,6 +94,7 @@ bool tsab_init() {
 	tsab_input_bind_api(state);
 	tsab_audio_bind_api(state);
 	tsab_physics_bind_api(state);
+	tsab_ui_bind_api(state);
 
 	lit_interpret(state, "prefix", (char*) prefix);
 	LitInterpretResult result;
@@ -136,6 +139,7 @@ void tsab_quit() {
 	tsab_physics_quit(state);
 	tsab_input_quit();
 	tsab_shaders_quit();
+	tsab_ui_quit();
 	tsab_graphics_quit();
 	tsab_audio_quit();
 

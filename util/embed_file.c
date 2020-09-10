@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 		size_t i;
 
 		for (i = 0; i < nread; i++) {
-			fprintf(out, "0x%02x, ", buf[i]);
+			fprintf(out, "0x%02x,", buf[i]);
 
 			if (++linecount == 10) {
 				fprintf(out, "\n");
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 	}
 
 	fprintf(out, "};\n");
-	fprintf(out, "const size_t %s_len = sizeof(%s);\n\n", sym, sym);
+	fprintf(out, "const size_t %s_len = sizeof(%s);\n", sym, sym);
 
 	fclose(in);
 	fclose(out);

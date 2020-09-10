@@ -27,7 +27,7 @@ if (EMSCRIPTEN)
 	set(CMAKE_CXX_CREATE_STATIC_LIBRARY "<CMAKE_AR> -o <TARGET> <LINK_FLAGS> <OBJECTS>")
 endif()
 
-include_directories(include/ libs/include/ libs/lit/include/ libs/ libs/box2d/include/)
+include_directories(include/ libs/include/ libs/lit/include/ libs/ libs/box2d/include/ libs/imgui/)
 
 if (EMSCRIPTEN)
 	set(EMBED_BYTECODE ON)
@@ -52,7 +52,9 @@ add_custom_command(
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/prefix.lit)
 
 set(embed_resources)
-list(APPEND embed_resources ${SOURCE_FILES} dist/default_font.c dist/gamecontrollerdb.c dist/prefix.c)
+list(APPEND embed_resources ${SOURCE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/dist/default_font.c ${CMAKE_CURRENT_SOURCE_DIR}/dist/gamecontrollerdb.c ${CMAKE_CURRENT_SOURCE_DIR}/dist/prefix.c
+	libs/imgui/examples/imgui_impl_sdl.cpp libs/imgui/examples/imgui_impl_opengl3.cpp
+	libs/imgui/imgui_draw.cpp libs/imgui/imgui_widgets.cpp libs/imgui/imgui.cpp)
 
 IF(EMBED_BYTECODE)
 	MESSAGE("Embeding bytecode...")

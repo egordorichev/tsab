@@ -1,11 +1,10 @@
 # todo
 
-* physics: {
- * creating bodies from custom fixtures
- * joints
- * contact detection
- * raycasting
-}
+* tsab conf function
+* contact detection
+* raycasting
+
+* line info errors are off again
 
 * fix config (it relies on maps but the shortcut is objects now?)
 * html5: embed config and main.lbc or smth
@@ -17,4 +16,9 @@
 * imgui
 * engine error reporting (audio failed, etc)
 
-* allow to build with a built-in game?
+* show "no game" if can't find any source files
+
+* physics: {
+ * creating bodies from custom fixtures
+ * joints
+}

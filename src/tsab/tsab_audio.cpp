@@ -16,7 +16,7 @@ static std::map<std::string, int> sound_ids;
 static std::map<std::string, Mix_Music*> loaded_music;
 
 void tsab_audio_init() {
-	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) == -1) {
+	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 1024) == -1) {
 		return;
 	}
 }
