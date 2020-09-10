@@ -1,0 +1,7 @@
+return new Map {
+	window = new Map {
+		width = 256 * 2,
+		height = 256 * 2,
+		title = "tsab-playground"
+	}
+}
