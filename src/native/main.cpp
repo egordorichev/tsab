@@ -5,6 +5,7 @@ int main() {
 		return -1;
 	}
 
+	tsab_setup_loop();
 	tsab_loop();
 	tsab_quit();
 

@@ -10,6 +10,7 @@
 * fix config (it relies on maps but the shortcut is objects now?)
 * html5: embed config and main.lbc or smth
 * error screenstacktrace
+* graceful error handling with no game (lagged my laptop to death)
 
 * rendering rotated rect?
 * input callbacks?: keyPressed, keyReleased, buttonPressed, buttonReleased, mouseMoved, controllerConnected, controllerDisconnected

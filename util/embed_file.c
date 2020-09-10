@@ -22,9 +22,12 @@ int main(int argc, char** argv) {
 	FILE* in = open_or_exit(argv[2], "r");
 
 	char symfile[256];
-	snprintf(symfile, sizeof(symfile), "%s.c", sym);
+	snprintf(symfile, sizeof(symfile), "dist/%s.c", sym);
 
 	FILE* out = open_or_exit(symfile, "w");
+
+	printf("Embeding file %s...\n", argv[2]);
+
 	fprintf(out, "#include <stdlib.h>\n");
 	fprintf(out, "const char %s[] = {\n", sym);
 

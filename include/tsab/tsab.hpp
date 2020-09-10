@@ -4,6 +4,7 @@
 bool tsab_init();
 void tsab_quit();
 
+void tsab_setup_loop();
 void tsab_loop();
 bool tsab_frame();
 

@@ -1,8 +1,13 @@
 #include <tsab/tsab_audio.hpp>
-#include <SDL2/SDL_mixer.h>
 
-#include <map>
+#ifdef EMSCRIPTEN
+#include <SDL/SDL_mixer.h>
+#else
+#include <SDL2/SDL_mixer.h>
+#endif
+
 #include <vector>
+#include <map>
 #include <string>
 #include <iostream>
 

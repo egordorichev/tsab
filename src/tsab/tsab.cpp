@@ -59,7 +59,10 @@ static bool handle(LitInterpretResult result) {
 }
 
 extern "C" const char prefix[];
-extern "C" const size_t prefix_len;
+
+#ifdef EMBED_BYTECODE
+	extern "C" const char bytecode[];
+#endif
 
 bool tsab_init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
@@ -91,18 +94,21 @@ bool tsab_init() {
 	tsab_physics_bind_api(state);
 
 	lit_interpret(state, "prefix", (char*) prefix);
+	LitInterpretResult result;
 
-	/*LitInterpretResult result = lit_interpret_file(state, "main.lit", false);
-	main_module = state->last_module;*/
-
-	main_module = lit_get_module(state, "main");
+	#ifdef EMBED_BYTECODE
+		main_module = lit_get_module(state, "main");
+	#else
+		result = lit_interpret_file(state, "main.lit", false);
+		main_module = state->last_module;
+	#endif
 
 	if (main_module == NULL) {
 		std::cout << "Main module is missing\n";
 		return false;
 	}
 
-	LitInterpretResult result = lit_interpret_module(state, main_module);
+	result = lit_interpret_module(state, main_module);
 	LitValue value = lit_get_global(state, CONST_STRING(state, "tsab"));
 
 	if (!IS_INSTANCE(value)) {
@@ -139,6 +145,8 @@ void tsab_quit() {
 }
 
 bool tsab_frame() {
+	start_time = SDL_GetTicks();
+
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 			case SDL_QUIT: {
@@ -166,36 +174,39 @@ bool tsab_frame() {
 	handle(call_tsab_method(render_string, NULL, 0));
 	tsab_graphics_finish_frame();
 
+	delta = end_time - start_time;
+
+	if (delta < time_per_frame) {
+		SDL_Delay(time_per_frame - delta);
+		delta = time_per_frame;
+	}
+
+	fps = 1000.0f / delta;
+
+	start_time = end_time;
+	end_time = SDL_GetTicks();
+
 	return false;
 }
 
-void tsab_loop() {
+void tsab_setup_loop() {
 	end_time = SDL_GetTicks();
+}
 
+void tsab_loop() {
 	while (true) {
-		start_time = SDL_GetTicks();
-
 		if (tsab_frame()) {
 			return;
 		}
-
-		delta = end_time - start_time;
-
-		if (delta < time_per_frame) {
-			SDL_Delay(time_per_frame - delta);
-			delta = time_per_frame;
-		}
-
-		fps = 1000.0f / delta;
-
-		start_time = end_time;
-		end_time = SDL_GetTicks();
 	}
 }
 
 static LitMap* configure() {
-	// LitInterpretResult conf = lit_interpret_file(state, "config.lit", false);
-	LitInterpretResult conf = lit_interpret_file(state, "main.lbc", false);
+	#ifdef EMBED_BYTECODE
+		LitInterpretResult conf = lit_interpret(state, "main", bytecode);
+	#else
+		LitInterpretResult conf = lit_interpret_file(state, "config.lit", false);
+	#endif
 
 	if (conf.type != INTERPRET_OK) {
 		return nullptr;

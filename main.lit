@@ -1,0 +1,3 @@
+function tsab.render() {
+	Graphics.print("Hello, world!", 10, 10)
+}

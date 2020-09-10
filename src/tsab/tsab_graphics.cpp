@@ -141,7 +141,7 @@ GPU_Target* tsab_graphics_get_current_target() {
 	return current_target == nullptr ? screen : current_target->target;
 }
 
-bool tsab_graphics_set_title(const char* title) {
+void tsab_graphics_set_title(const char* title) {
 	SDL_SetWindowTitle(window, title);
 }
 
