@@ -92,9 +92,17 @@ bool tsab_init() {
 
 	lit_interpret(state, "prefix", (char*) prefix);
 
-	LitInterpretResult result = lit_interpret_file(state, "main.lit", false);
-	main_module = state->last_module;
+	/*LitInterpretResult result = lit_interpret_file(state, "main.lit", false);
+	main_module = state->last_module;*/
 
+	main_module = lit_get_module(state, "main");
+
+	if (main_module == NULL) {
+		std::cout << "Main module is missing\n";
+		return false;
+	}
+
+	LitInterpretResult result = lit_interpret_module(state, main_module);
 	LitValue value = lit_get_global(state, CONST_STRING(state, "tsab"));
 
 	if (!IS_INSTANCE(value)) {
@@ -186,7 +194,8 @@ void tsab_loop() {
 }
 
 static LitMap* configure() {
-	LitInterpretResult conf = lit_interpret_file(state, "config.lit", false);
+	// LitInterpretResult conf = lit_interpret_file(state, "config.lit", false);
+	LitInterpretResult conf = lit_interpret_file(state, "main.lbc", false);
 
 	if (conf.type != INTERPRET_OK) {
 		return nullptr;

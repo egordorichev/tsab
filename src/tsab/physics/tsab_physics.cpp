@@ -169,11 +169,6 @@ LIT_METHOD(body_constructor) {
 		lit_runtime_error_exiting(vm, "Unknown body preset %s", preset);
 	}
 
-	b2MassData massData;
-	body->GetMassData(&massData);
-	massData.mass = 50; //Just tweak me
-	massData.I = 1; //Just never set me to 0 if you don't want to have nAn propagating
-
 	return instance;
 }
 
@@ -424,7 +419,7 @@ LIT_METHOD(physics_render) {
 	return NULL_VALUE;
 }
 
-LIT_METHOD(physics_join) {
+/*LIT_METHOD(physics_join) {
 	if (world == nullptr) {
 		return NULL_VALUE;
 	}
@@ -451,7 +446,7 @@ LIT_METHOD(physics_join) {
 	world->CreateJoint(&def);
 
 	return NULL_VALUE;
-}
+}*/
 
 void tsab_physics_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("Body")
@@ -481,6 +476,6 @@ void tsab_physics_bind_api(LitState* state) {
 		LIT_BIND_STATIC_METHOD("destroyWorld", physics_destroy_world)
 		LIT_BIND_STATIC_METHOD("update", physics_update)
 		LIT_BIND_STATIC_METHOD("render", physics_render)
-		LIT_BIND_STATIC_METHOD("join", physics_join)
+		// LIT_BIND_STATIC_METHOD("join", physics_join)
 	LIT_END_CLASS()
 }
