@@ -59,7 +59,7 @@ IF(EMBED_BYTECODE)
 	ADD_DEFINITIONS(-DEMBED_BYTECODE)
 
 	add_custom_command(
-		OUTPUT bytecode.c
+		OUTPUT dist/bytecode.c
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		COMMAND ./util/embedfile bytecode ${CMAKE_CURRENT_SOURCE_DIR}/main.lbc
 		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/main.lbc)
@@ -70,11 +70,11 @@ ENDIF()
 add_executable(tsab ${embed_resources})
 
 if (EMSCRIPTEN)
-	add_definitions("-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")
-	set_target_properties(tsab PROPERTIES LINK_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_OGG=1 -s USE_VORBIS=1 --shell-file src/html/shell.html -o index.html")
+	add_definitions("-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")
+	set_target_properties(tsab PROPERTIES LINK_FLAGS "-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_OGG=1 -s USE_VORBIS=1 --shell-file src/html/shell.html -o index.html")
 
 	include_directories(${BOX2D_INCLUDE_DIR})
-	target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.a ${CMAKE_SOURCE_DIR}/libs/box2d/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.bc)
+	target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/box2d/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.bc)
 else()
 	find_package(SDL2 REQUIRED)
 	find_package(SDL2_ttf REQUIRED)

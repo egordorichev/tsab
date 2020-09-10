@@ -6,3 +6,5 @@ cmake-build*
 cmake_install*
 dist*
 tsab.cbp
+*.lbc
+*.o
