@@ -56,6 +56,24 @@ LIT_METHOD(ui_render) {
 	return NULL_VALUE;
 }
 
+LIT_METHOD(ui_set_next_window_position) {
+	int x = LIT_CHECK_NUMBER(0);
+	int y = LIT_CHECK_NUMBER(1);
+	bool once = LIT_GET_BOOL(2, false);
+
+	ImGui::SetNextWindowPos(ImVec2(x, y), once ? ImGuiCond_Once : ImGuiCond_Always);
+	return NULL_VALUE;
+}
+
+LIT_METHOD(ui_set_next_window_size) {
+	int x = LIT_CHECK_NUMBER(0);
+	int y = LIT_CHECK_NUMBER(1);
+	bool once = LIT_GET_BOOL(2, false);
+
+	ImGui::SetNextWindowSize(ImVec2(x, y), once ? ImGuiCond_Once : ImGuiCond_Always);
+	return NULL_VALUE;
+}
+
 LIT_METHOD(ui_begin) {
 	ImGui::SetNextWindowBgAlpha(0.8f);
 	const char* name = LIT_GET_STRING(0, "Easter Egg");
@@ -406,6 +424,9 @@ void tsab_ui_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("ImGui")
 		LIT_BIND_STATIC_METHOD("newFrame", ui_new_frame)
 		LIT_BIND_STATIC_METHOD("render", ui_render)
+
+		LIT_BIND_STATIC_METHOD("setNextWindowPosition", ui_set_next_window_position)
+		LIT_BIND_STATIC_METHOD("setNextWindowSize", ui_set_next_window_size)
 
 		LIT_BIND_STATIC_METHOD("begin", ui_begin)
 		LIT_BIND_STATIC_METHOD("end", ui_end)
