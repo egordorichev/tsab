@@ -11,9 +11,9 @@
 * error screenstacktrace
 * graceful error handling with no game (lagged my laptop to death)
 
+* show/hide cursor
 * rendering rotated rect?
 * input callbacks?: keyPressed, keyReleased, buttonPressed, buttonReleased, mouseMoved, controllerConnected, controllerDisconnected
-* imgui
 * engine error reporting (audio failed, etc)
 
 * show "no game" if can't find any source files

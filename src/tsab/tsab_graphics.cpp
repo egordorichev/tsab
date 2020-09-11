@@ -285,13 +285,29 @@ LIT_METHOD(tsab_graphics_set_clear_color) {
 
 			bg_color[3] = 255;
 		} else if (arg_count == 1) {
-			float value = (float) LIT_CHECK_NUMBER(0);
+			if (IS_ARRAY(args[0])) {
+				LitArray* array = AS_ARRAY(args[0]);
 
-			for (int i = 0; i < 3; i++) {
-				bg_color[i] = value;
+				if (array->values.count < 3) {
+					lit_runtime_error_exiting(vm, "Expected at least 3 values in the color array");
+				}
+
+				for (int i = 0; i < fmin(4, array->values.count); i++) {
+					LitValue value = array->values.values[i];
+
+					if (IS_NUMBER(value)) {
+						bg_color[i] = AS_NUMBER(value);
+					}
+				}
+			} else {
+				float value = (float) LIT_CHECK_NUMBER(0);
+
+				for (int i = 0; i < 3; i++) {
+					bg_color[i] = value;
+				}
+
+				bg_color[3] = 255;
 			}
-
-			bg_color[3] = 255;
 		} else if (arg_count == 2) {
 			float value = (float) LIT_CHECK_NUMBER(0);
 
@@ -334,12 +350,28 @@ LIT_METHOD(tsab_graphics_set_color) {
 			current_color.b = (Uint8) LIT_CHECK_NUMBER(2);
 			current_color.a = 255;
 		} else if (arg_count == 1) {
-			Uint8 value = (Uint8) LIT_CHECK_NUMBER(0);
+			if (IS_ARRAY(args[0])) {
+				LitArray* array = AS_ARRAY(args[0]);
 
-			current_color.r = value;
-			current_color.g = value;
-			current_color.b = value;
-			current_color.a = 255;
+				if (array->values.count < 3) {
+					lit_runtime_error_exiting(vm, "Expected at least 3 values in the color array");
+				}
+
+				for (int i = 0; i < fmin(4, array->values.count); i++) {
+					LitValue value = array->values.values[i];
+
+					if (IS_NUMBER(value)) {
+						bg_color[i] = AS_NUMBER(value);
+					}
+				}
+			} else {
+				Uint8 value = (Uint8) LIT_CHECK_NUMBER(0);
+
+				current_color.r = value;
+				current_color.g = value;
+				current_color.b = value;
+				current_color.a = 255;
+			}
 		} else if (arg_count == 2) {
 			Uint8 value = (Uint8) LIT_CHECK_NUMBER(0);
 
