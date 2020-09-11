@@ -1,12 +1,7 @@
 # todo
 
-* tsab conf function
 * contact detection
 * raycasting
-
-* line info errors are off again
-
-* fix config (it relies on maps but the shortcut is objects now?)
 * html5: embed config and main.lbc or smth
 * error screenstacktrace
 * graceful error handling with no game (lagged my laptop to death)
@@ -17,6 +12,8 @@
 * engine error reporting (audio failed, etc)
 
 * show "no game" if can't find any source files
+* line info errors are off again?
+* implement ref a = 32 or smth
 
 * physics: {
  * creating bodies from custom fixtures

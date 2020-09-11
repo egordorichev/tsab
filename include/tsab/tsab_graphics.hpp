@@ -6,7 +6,7 @@
 #include <SDL2/SDL.h>
 #include <SDL_GPU/SDL_gpu.h>
 
-bool tsab_graphics_init(LitState* state, LitMap* config);
+bool tsab_graphics_init(LitState* state, LitInstance* config);
 void tsab_graphics_handle_event(SDL_Event* event);
 void tsab_graphics_get_ready();
 void tsab_graphics_quit();

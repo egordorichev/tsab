@@ -29,7 +29,7 @@ static float delta;
 static float time_per_frame = 1000.0f / 60;
 static float fps;
 
-static LitMap* configure();
+static LitInstance* configure();
 static LitModule* main_module;
 
 static void error_callback(LitState* state, LitErrorType type, const char* message, va_list args) {
@@ -75,7 +75,18 @@ bool tsab_init() {
 	state->error_fn = error_callback;
 
 	lit_open_libraries(state);
-	LitMap* config = configure();
+	lit_interpret(state, "prefix", (char*) prefix);
+	main_module = state->last_module;
+
+	LitValue value = lit_get_global(state, CONST_STRING(state, "tsab"));
+
+	if (!IS_INSTANCE(value)) {
+		std::cout << "Failed to find tsab instance\n";
+		return false;
+	}
+
+	tsab = AS_INSTANCE(value);
+	LitInstance* config = configure();
 
 	if (!tsab_graphics_init(state, config)) {
 		SDL_Quit();
@@ -96,7 +107,6 @@ bool tsab_init() {
 	tsab_physics_bind_api(state);
 	tsab_ui_bind_api(state);
 
-	lit_interpret(state, "prefix", (char*) prefix);
 	LitInterpretResult result;
 
 	#ifdef EMBED_BYTECODE
@@ -112,14 +122,6 @@ bool tsab_init() {
 	}
 
 	result = lit_interpret_module(state, main_module);
-	LitValue value = lit_get_global(state, CONST_STRING(state, "tsab"));
-
-	if (!IS_INSTANCE(value)) {
-		std::cout << "Failed to find tsab instance\n";
-		return false;
-	}
-
-	tsab = AS_INSTANCE(value);
 
 	if (!handle(result)) {
 		handle(call_tsab_method(CONST_STRING(state, "init"), NULL, 0));
@@ -205,7 +207,7 @@ void tsab_loop() {
 	}
 }
 
-static LitMap* configure() {
+static LitInstance* configure() {
 	#ifdef EMBED_BYTECODE
 		LitInterpretResult conf = lit_interpret(state, "main", bytecode);
 	#else
@@ -216,10 +218,16 @@ static LitMap* configure() {
 		return nullptr;
 	}
 
+	conf = call_tsab_method(CONST_STRING(state, "configure"), NULL, 0);
+
+	if (handle(conf)) {
+		return nullptr;
+	}
+
 	LitValue config = conf.result;
 
-	if (IS_MAP(config)) {
-		return AS_MAP(config);
+	if (IS_INSTANCE(config)) {
+		return AS_INSTANCE(config);
 	}
 
 	return nullptr;

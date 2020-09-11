@@ -28,7 +28,7 @@ static bool pushed = false;
 static bool window_hidden = true;
 static float total_time = 0;
 
-bool tsab_graphics_init(LitState* state, LitMap* config) {
+bool tsab_graphics_init(LitState* state, LitInstance* config) {
 	int width = 640;
 	int height = 480;
 	int min_width = -1;
@@ -40,41 +40,41 @@ bool tsab_graphics_init(LitState* state, LitMap* config) {
 	bool bordered = true;
 
 	if (config != NULL) {
-		LitValue w = lit_get_map_field(state, config, "window");
+		LitValue w = lit_get_field(state, &config->fields, "window");
 
-		if (IS_MAP(w)) {
-			LitMap* window_map = AS_MAP(w);
+		if (IS_INSTANCE(w)) {
+			LitTable* window_map = &AS_INSTANCE(w)->fields;
 			LitValue value;
 
-			if (IS_NUMBER(value = lit_get_map_field(state, window_map, "width"))) {
+			if (IS_NUMBER(value = lit_get_field(state, window_map, "width"))) {
 				width = AS_NUMBER(value);
 			}
 
-			if (IS_NUMBER(value = lit_get_map_field(state, window_map, "height"))) {
+			if (IS_NUMBER(value = lit_get_field(state, window_map, "height"))) {
 				height = AS_NUMBER(value);
 			}
 
-			if (IS_NUMBER(value = lit_get_map_field(state, window_map, "min_width"))) {
+			if (IS_NUMBER(value = lit_get_field(state, window_map, "min_width"))) {
 				min_width = AS_NUMBER(value);
 			}
 
-			if (IS_NUMBER(value = lit_get_map_field(state, window_map, "min_height"))) {
+			if (IS_NUMBER(value = lit_get_field(state, window_map, "min_height"))) {
 				min_height = AS_NUMBER(value);
 			}
 
-			if (IS_NUMBER(value = lit_get_map_field(state, window_map, "max_width"))) {
+			if (IS_NUMBER(value = lit_get_field(state, window_map, "max_width"))) {
 				max_width = AS_NUMBER(value);
 			}
 
-			if (IS_NUMBER(value = lit_get_map_field(state, window_map, "max_height"))) {
+			if (IS_NUMBER(value = lit_get_field(state, window_map, "max_height"))) {
 				max_height = AS_NUMBER(value);
 			}
 
-			if (IS_STRING(value = lit_get_map_field(state, window_map, "title"))) {
+			if (IS_STRING(value = lit_get_field(state, window_map, "title"))) {
 				title = AS_CSTRING(value);
 			}
 
-			if (IS_BOOL(value = lit_get_map_field(state, window_map, "bordered"))) {
+			if (IS_BOOL(value = lit_get_field(state, window_map, "bordered"))) {
 				bordered = AS_BOOL(value);
 			}
 		}
