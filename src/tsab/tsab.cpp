@@ -111,17 +111,17 @@ bool tsab_init() {
 
 	#ifdef EMBED_BYTECODE
 		main_module = lit_get_module(state, "main");
+
+		if (main_module == NULL) {
+			std::cout << "Main module is missing\n";
+			return false;
+		}
+
+		result = lit_interpret_module(state, main_module);
 	#else
 		result = lit_interpret_file(state, "main.lit", false);
 		main_module = state->last_module;
 	#endif
-
-	if (main_module == NULL) {
-		std::cout << "Main module is missing\n";
-		return false;
-	}
-
-	result = lit_interpret_module(state, main_module);
 
 	if (!handle(result)) {
 		handle(call_tsab_method(CONST_STRING(state, "init"), NULL, 0));

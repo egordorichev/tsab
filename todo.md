@@ -1,9 +1,12 @@
 # todo
 
+* flute
+* aseprite loader
+* errorscreen stacktrace
+* error while executing code in not a function will fail? cuz error is null somehow?
+
 * contact detection
 * raycasting
-* html5: embed config and main.lbc or smth
-* error screenstacktrace
 * graceful error handling with no game (lagged my laptop to death)
 
 * show/hide cursor
