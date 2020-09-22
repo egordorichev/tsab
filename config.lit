@@ -1,5 +1,5 @@
-return new Map {
-	window = new Map {
+return {
+	window = {
 		width = 256 * 2,
 		height = 256 * 2,
 		title = "tsab-playground"
