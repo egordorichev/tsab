@@ -9,3 +9,4 @@ tsab.cbp
 *.lbc
 *.o
 install_manifest*
+util/embedfile
