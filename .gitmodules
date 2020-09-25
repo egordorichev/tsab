@@ -1,7 +1,6 @@
 [submodule "libs/lit"]
 	path = libs/lit
 	url = https://github.com/egordorichev/lit
-	
 [submodule "libs/box2d"]
 	path = libs/box2d
 	url = https://github.com/erincatto/Box2D
