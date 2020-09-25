@@ -1,8 +1,8 @@
 function tsab.configure() {
 	return {
 		window = {
-			width = 256 * 2,
-			height = 256 * 2,
+			width = 512,
+			height = 512,
 			title = "tsab"
 		}
 	}

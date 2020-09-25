@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 project(tsab)
 
 add_subdirectory(libs/lit)
-option(EMBED_BYTECIDE "Embed main.lbc" OFF)
+
+option(TSAB_EMBED_BYTECIDE "Embed main.lbc" OFF)
+option(TSAB_BUILD_BINARY "Build the tsab executable" ON)
+option(TSAB_TARGET_PREBUILD_SDL "Use prebuilt SDL" OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
@@ -30,63 +33,77 @@ endif()
 include_directories(include/ libs/include/ libs/lit/include/ libs/ libs/box2d/include/ libs/imgui/)
 
 if (EMSCRIPTEN)
-	set(EMBED_BYTECODE ON)
-	file(GLOB_RECURSE SOURCE_FILES src/html/*.cpp src/tsab/*.cpp)
+	set(TSAB_EMBED_BYTECODE ON)
+	file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/tsab/*.cpp)
 else()
-	file(GLOB_RECURSE SOURCE_FILES src/native/*.cpp src/tsab/*.cpp)
+	file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/tsab/*.cpp)
 endif()
 
 add_custom_command(
-	OUTPUT dist/default_font.c
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/default_font.c
 	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/embedfile default_font ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf)
 
 add_custom_command(
-	OUTPUT dist/gamecontrollerdb.c
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/gamecontrollerdb.c
 	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/embedfile gamecontrollerdb ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt)
 
 add_custom_command(
-	OUTPUT dist/prefix.c
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/prefix.c
 	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/embedfile prefix ${CMAKE_CURRENT_SOURCE_DIR}/assets/prefix.lit
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/prefix.lit)
 
 set(embed_resources)
 list(APPEND embed_resources ${SOURCE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/dist/default_font.c ${CMAKE_CURRENT_SOURCE_DIR}/dist/gamecontrollerdb.c ${CMAKE_CURRENT_SOURCE_DIR}/dist/prefix.c
-	libs/imgui/examples/imgui_impl_sdl.cpp libs/imgui/examples/imgui_impl_opengl3.cpp
-	libs/imgui/imgui_draw.cpp libs/imgui/imgui_widgets.cpp libs/imgui/imgui.cpp)
+	${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/examples/imgui_impl_sdl.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/examples/imgui_impl_opengl3.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui_draw.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui_widgets.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui.cpp)
 
-IF(EMBED_BYTECODE)
+IF(TSAB_EMBED_BYTECODE)
 	MESSAGE("Embeding bytecode...")
 	ADD_DEFINITIONS(-DEMBED_BYTECODE)
 
 	add_custom_command(
-		OUTPUT dist/bytecode.c
+		OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/bytecode.c
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		COMMAND ./util/embedfile bytecode ${CMAKE_CURRENT_SOURCE_DIR}/main.lbc
+		COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/embedfile bytecode ${CMAKE_CURRENT_SOURCE_DIR}/main.lbc
 		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/main.lbc)
 
-	list(APPEND embed_resources dist/bytecode.c)
+	list(APPEND embed_resources ${CMAKE_CURRENT_SOURCE_DIR}/dist/bytecode.c)
 ENDIF()
 
-add_executable(tsab ${embed_resources})
+add_library(tsab STATIC ${embed_resources})
 
-if (EMSCRIPTEN)
-	add_definitions("-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")
-	set_target_properties(tsab PROPERTIES LINK_FLAGS "-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_OGG=1 -s USE_VORBIS=1 --shell-file src/html/shell.html -o index.html")
+if (TSAB_BUILD_BINARY)
+	if (EMSCRIPTEN)
+		add_definitions("-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 --shell-file src/html/shell.html -o index.html")
+		set_target_properties(tsab PROPERTIES LINK_FLAGS "-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_OGG=1 -s USE_VORBIS=1 --shell-file src/html/shell.html -o index.html")
 
-	include_directories(${BOX2D_INCLUDE_DIR})
-	target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/box2d/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.bc)
-else()
-	find_package(SDL2 REQUIRED)
-	find_package(SDL2_ttf REQUIRED)
-	find_package(SDL2_image REQUIRED)
-	find_package(SDL2_mixer REQUIRED)
-	find_package(OpenGL REQUIRED)
-	find_package(GLUT REQUIRED)
+		include_directories(${BOX2D_INCLUDE_DIR})
+		target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/box2d/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.bc)
+		add_executable(tsabc src/html/main.cpp)
+	else()
+		if (TSAB_TARGET_PREBUILD_SDL)
+			target_link_libraries(tsab SDL2 SDL2_image SDL2_gfx SDL2_mixer SDL2_ttf)
+		else()
+			find_package(SDL2 REQUIRED)
+			find_package(SDL2_ttf REQUIRED)
+			find_package(SDL2_image REQUIRED)
+			find_package(SDL2_mixer REQUIRED)
 
-	include_directories(${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
-	target_link_libraries(tsab lit ${CMAKE_SOURCE_DIR}/libs/box2d/build/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY})
+			find_package(OpenGL REQUIRED)
+			find_package(GLUT REQUIRED)
+
+			include_directories(${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
+			target_link_libraries(tsab ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
+		endif()
+
+		target_link_libraries(tsab lit ${CMAKE_SOURCE_DIR}/libs/box2d/build/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a)
+		add_executable(tsabc src/native/main.cpp)
+	endif()
+
+	target_link_libraries(tsabc tsab)
+
+	set_target_properties(tsabc PROPERTIES OUTPUT_NAME "tsab")
+	install(TARGETS tsabc DESTINATION bin)
 endif()
-
-install(TARGETS tsab DESTINATION bin)
