@@ -8,3 +8,6 @@
 [submodule "libs/imgui"]
 	path = libs/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "libs/SDL_gpu"]
+	path = libs/SDL_gpu
+	url = https://github.com/grimfang4/sdl-gpu

@@ -3,7 +3,7 @@
 #include <tsab/tsab.hpp>
 
 #include <box2d/box2d.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <vector>
 

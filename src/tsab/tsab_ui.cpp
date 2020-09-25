@@ -1,7 +1,7 @@
 #include <tsab/tsab_ui.hpp>
 
-#include <SDL2/SDL.h>
-#include <SDL_GPU/SDL_gpu.h>
+#include <SDL.h>
+#include <SDL_gpu.h>
 
 #include <imgui/imgui.h>
 #include <imgui/examples/imgui_impl_sdl.h>

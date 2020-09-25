@@ -3,8 +3,8 @@
 
 #include <tsab/tsab_common.hpp>
 
-#include <SDL2/SDL.h>
-#include <SDL_GPU/SDL_gpu.h>
+#include <SDL.h>
+#include <SDL_gpu.h>
 
 bool tsab_graphics_init(LitState* state, LitInstance* config);
 void tsab_graphics_handle_event(SDL_Event* event);

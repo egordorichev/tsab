@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(tsab)
 
-add_subdirectory(libs/lit)
-
 option(TSAB_EMBED_BYTECIDE "Embed main.lbc" OFF)
 option(TSAB_BUILD_BINARY "Build the tsab executable" ON)
 option(TSAB_TARGET_PREBUILD_SDL "Use prebuilt SDL" OFF)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)
 
@@ -19,8 +15,8 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-# Required on linux to be marked as executable in some cases (weird, I know)
-set(CMAKE_CXX_FLAGS "-no-pie -Wno-return-type-c-linkage -Wno-unused-command-line-argument")
+# (-no-pie) is required on linux to be marked as executable in some cases (weird, I know)
+set(CMAKE_CXX_FLAGS "-no-pie -Wno-return-type-c-linkage -Wno-format-security")
 
 if (EMSCRIPTEN)
 	set(CMAKE_EXECUTABLE_SUFFIX ".html")
@@ -30,7 +26,23 @@ if (EMSCRIPTEN)
 	set(CMAKE_CXX_CREATE_STATIC_LIBRARY "<CMAKE_AR> -o <TARGET> <LINK_FLAGS> <OBJECTS>")
 endif()
 
-include_directories(include/ libs/include/ libs/lit/include/ libs/ libs/box2d/include/ libs/imgui/)
+if (NOT TSAB_TARGET_PREBUILD_SDL)
+	find_package(SDL2 REQUIRED)
+	find_package(SDL2_ttf REQUIRED)
+	find_package(SDL2_image REQUIRED)
+	find_package(SDL2_mixer REQUIRED)
+
+	find_package(OpenGL REQUIRED)
+	find_package(GLUT REQUIRED)
+
+	set(${SDL2_INCLUDE_DIR} "${SDL2_INCLUDE_DIR}/SDL2/")
+	include_directories(${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIRS}/SDL2/ ${SDL2_IMAGE_INCLUDE_DIR}/SDL2/ ${SDL2_MIXER_INCLUDE_DIR}/SDL2/)
+endif()
+
+include_directories(include/ libs/lit/include/ libs/ libs/box2d/include/ libs/imgui/ libs/SDL_gpu/include/)
+
+add_subdirectory(libs/lit)
+add_subdirectory(libs/SDL_gpu)
 
 if (EMSCRIPTEN)
 	set(TSAB_EMBED_BYTECODE ON)
@@ -59,7 +71,7 @@ list(APPEND embed_resources ${SOURCE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/dist/def
 	${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/examples/imgui_impl_sdl.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/examples/imgui_impl_opengl3.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui_draw.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui_widgets.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui.cpp)
 
-IF(TSAB_EMBED_BYTECODE)
+if(TSAB_EMBED_BYTECODE)
 	MESSAGE("Embeding bytecode...")
 	ADD_DEFINITIONS(-DEMBED_BYTECODE)
 
@@ -70,9 +82,12 @@ IF(TSAB_EMBED_BYTECODE)
 		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/main.lbc)
 
 	list(APPEND embed_resources ${CMAKE_CURRENT_SOURCE_DIR}/dist/bytecode.c)
-ENDIF()
+endif()
 
 add_library(tsab STATIC ${embed_resources})
+
+set_target_properties(tsab PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+set_target_properties(tsab PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 
 if (TSAB_BUILD_BINARY)
 	if (EMSCRIPTEN)
@@ -80,25 +95,16 @@ if (TSAB_BUILD_BINARY)
 		set_target_properties(tsab PROPERTIES LINK_FLAGS "-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_OGG=1 -s USE_VORBIS=1 --shell-file src/html/shell.html -o index.html")
 
 		include_directories(${BOX2D_INCLUDE_DIR})
-		target_link_libraries(tsab ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/box2d/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/lit/dist/liblit.bc ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.bc)
+		target_link_libraries(tsab LINK_PUBLIC lit ${CMAKE_CURRENT_SOURCE_DIR}/libs/box2d/src/libbox2d.a ${CMAKE_CURRENT_SOURCE_DIR}/libs/lit/dist/liblit.bc SDL_gpu)
 		add_executable(tsabc src/html/main.cpp)
 	else()
 		if (TSAB_TARGET_PREBUILD_SDL)
-			target_link_libraries(tsab SDL2 SDL2_image SDL2_gfx SDL2_mixer SDL2_ttf)
+			target_link_libraries(tsab LINK_PUBLIC SDL2 SDL2_image SDL2_gfx SDL2_mixer SDL2_ttf)
 		else()
-			find_package(SDL2 REQUIRED)
-			find_package(SDL2_ttf REQUIRED)
-			find_package(SDL2_image REQUIRED)
-			find_package(SDL2_mixer REQUIRED)
-
-			find_package(OpenGL REQUIRED)
-			find_package(GLUT REQUIRED)
-
-			include_directories(${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
-			target_link_libraries(tsab ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
+			target_link_libraries(tsab LINK_PUBLIC ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
 		endif()
 
-		target_link_libraries(tsab lit ${CMAKE_SOURCE_DIR}/libs/box2d/build/src/libbox2d.a ${CMAKE_SOURCE_DIR}/libs/SDL_GPU/libSDL2_gpu.a)
+		target_link_libraries(tsab LINK_PUBLIC lit ${CMAKE_CURRENT_SOURCE_DIR}/libs/box2d/build/src/libbox2d.a SDL_gpu)
 		add_executable(tsabc src/native/main.cpp)
 	endif()
 

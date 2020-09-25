@@ -1,6 +1,6 @@
 #include <tsab/tsab_input.hpp>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <map>
 #include <cstring>

@@ -2,15 +2,17 @@
 #include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_common.hpp>
 
-#include <SDL_GPU/SDL_gpu.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>
+#include <SDL_gpu.h>
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
 
 #include <vector>
 #include <string>
 #include <regex>
 #include <iostream>
+
+#define CURRENT_TARGET current_target == nullptr ? screen : current_target->target
 
 static SDL_Color current_color = { 255, 255, 255, 255 };
 static float bg_color[] = { 0, 0, 0, 1 };
@@ -138,7 +140,7 @@ void tsab_graphics_handle_event(SDL_Event* event) {
 }
 
 GPU_Target* tsab_graphics_get_current_target() {
-	return current_target == nullptr ? screen : current_target->target;
+	return CURRENT_TARGET;
 }
 
 void tsab_graphics_set_title(const char* title) {
@@ -212,7 +214,7 @@ LIT_METHOD(tsab_graphics_clear) {
 		}
 	}
 
-	GPU_ClearRGBA(current_target == nullptr ? screen : current_target->target, bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
+	GPU_ClearRGBA(CURRENT_TARGET, bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
 	return NULL_VALUE;
 }
 
@@ -393,7 +395,7 @@ LIT_METHOD(tsab_graphics_set_color) {
 LIT_METHOD(tsab_graphics_draw) {
 	tsab_shaders_set_textured(true);
 
-	auto *target = current_target == nullptr ? screen : current_target->target;
+	auto *target = CURRENT_TARGET;
 
 	GPU_Image *what = nullptr;
 	int id = LIT_CHECK_NUMBER(0);
@@ -434,9 +436,9 @@ LIT_METHOD(tsab_graphics_circle) {
 	bool filled = LIT_GET_BOOL(3, true);
 
 	if (filled) {
-		GPU_CircleFilled(current_target == nullptr ? screen : current_target->target, x, y, r, current_color);
+		GPU_CircleFilled(CURRENT_TARGET, x, y, r, current_color);
 	} else {
-		GPU_Circle(current_target == nullptr ? screen : current_target->target, x, y, r, current_color);
+		GPU_Circle(CURRENT_TARGET, x, y, r, current_color);
 	}
 
 	return NULL_VALUE;
@@ -452,9 +454,9 @@ LIT_METHOD(tsab_graphics_rectangle) {
 	bool filled = LIT_GET_BOOL(4, true);
 
 	if (filled) {
-		GPU_RectangleFilled(current_target == nullptr ? screen : current_target->target, x, y, x + w, y + h, current_color);
+		GPU_RectangleFilled(CURRENT_TARGET, x, y, x + w, y + h, current_color);
 	} else {
-		GPU_Rectangle(current_target == nullptr ? screen : current_target->target, x, y, x + w, y + h, current_color);
+		GPU_Rectangle(CURRENT_TARGET, x, y, x + w, y + h, current_color);
 	}
 
 	return NULL_VALUE;
@@ -471,9 +473,9 @@ LIT_METHOD(tsab_graphics_ellipse) {
 	bool filled = LIT_GET_BOOL(5, true);
 
 	if (filled) {
-		GPU_EllipseFilled(current_target == nullptr ? screen : current_target->target, x, y, w, h, d, current_color);
+		GPU_EllipseFilled(CURRENT_TARGET, x, y, w, h, d, current_color);
 	} else {
-		GPU_Ellipse(current_target == nullptr ? screen : current_target->target, x, y, w, h, d, current_color);
+		GPU_Ellipse(CURRENT_TARGET, x, y, w, h, d, current_color);
 	}
 
 	return NULL_VALUE;
@@ -491,9 +493,9 @@ LIT_METHOD(tsab_graphics_triangle) {
 	bool filled = LIT_GET_BOOL(6, true);
 
 	if (filled) {
-		GPU_TriFilled(current_target == nullptr ? screen : current_target->target, x1, y1, x2, y2, x3, y3, current_color);
+		GPU_TriFilled(CURRENT_TARGET, x1, y1, x2, y2, x3, y3, current_color);
 	} else {
-		GPU_Tri(current_target == nullptr ? screen : current_target->target, x1, y1, x2, y2, x3, y3, current_color);
+		GPU_Tri(CURRENT_TARGET, x1, y1, x2, y2, x3, y3, current_color);
 	}
 
 	return NULL_VALUE;
@@ -505,7 +507,7 @@ LIT_METHOD(tsab_graphics_point) {
 	double x = LIT_CHECK_NUMBER(1);
 	double y = LIT_CHECK_NUMBER(2);
 
-	GPU_Pixel(current_target == nullptr ? screen : current_target->target, x + 0.5, y + 0.5, current_color);
+	GPU_Pixel(CURRENT_TARGET, x + 0.5, y + 0.5, current_color);
 
 	return NULL_VALUE;
 }
@@ -518,7 +520,7 @@ LIT_METHOD(tsab_graphics_line) {
 	double x2 = LIT_CHECK_NUMBER(2);
 	double y2 = LIT_CHECK_NUMBER(3);
 
-	GPU_Line(current_target == nullptr ? screen : current_target->target, x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5, current_color);
+	GPU_Line(CURRENT_TARGET, x1 + 0.5, y1 + 0.5, x2 + 0.5, y2 + 0.5, current_color);
 
 	return NULL_VALUE;
 }
@@ -584,7 +586,7 @@ LIT_METHOD(tsab_graphics_print) {
 	GPU_Image *image = GPU_CopyImageFromSurface(surface);
 
 	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
-	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2.0f, y + image->h / 2.0f,image->w / 2.0f, image->h / 2.0f, r, sx, sy);
+	GPU_BlitTransformX(image, nullptr, CURRENT_TARGET, x + image->w / 2.0f, y + image->h / 2.0f,image->w / 2.0f, image->h / 2.0f, r, sx, sy);
 
 	SDL_FreeSurface(surface);
 	return NULL_VALUE;
@@ -609,7 +611,7 @@ LIT_METHOD(tsab_graphics_printf) {
 	GPU_Image *image = GPU_CopyImageFromSurface(surface);
 
 	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
-	GPU_BlitTransformX(image, nullptr, current_target == nullptr ? screen : current_target->target, x + image->w / 2.0f, y + image->h / 2.0f,image->w / 2.0f, image->h / 2.0f, r, sx, sy);
+	GPU_BlitTransformX(image, nullptr, CURRENT_TARGET, x + image->w / 2.0f, y + image->h / 2.0f,image->w / 2.0f, image->h / 2.0f, r, sx, sy);
 
 	SDL_FreeSurface(surface);
 	return NULL_VALUE;
@@ -620,7 +622,7 @@ LIT_METHOD(tsab_graphics_set_camera) {
 	double y = LIT_GET_NUMBER(1, 0);
 	double s = LIT_GET_NUMBER(2, 1);
 
-	GPU_MatrixMode(GPU_MODELVIEW);
+	GPU_MatrixMode(CURRENT_TARGET, GPU_MODEL);
 
 	if (pushed) {
 		GPU_PopMatrix();
@@ -645,7 +647,7 @@ LIT_METHOD(tsab_graphics_set_camera) {
 
 LIT_METHOD(tsab_graphics_set_clip) {
 	if (arg_count == 0) {
-		GPU_UnsetClip(current_target == nullptr ? screen : current_target->target);
+		GPU_UnsetClip(CURRENT_TARGET);
 		return NULL_VALUE;
 	}
 
@@ -654,7 +656,7 @@ LIT_METHOD(tsab_graphics_set_clip) {
 	double w = LIT_CHECK_NUMBER(2);
 	double h = LIT_CHECK_NUMBER(3);
 
-	GPU_SetClip(current_target == nullptr ? screen : current_target->target, x, y, w, h);
+	GPU_SetClip(CURRENT_TARGET, x, y, w, h);
 	return NULL_VALUE;
 }
 
@@ -834,3 +836,5 @@ void tsab_graphics_bind_api(LitState* state) {
 		LIT_BIND_STATIC_METHOD("setShader", tsab_graphics_set_shader)
 	LIT_END_CLASS()
 }
+
+#undef CURRENT_TARGET
