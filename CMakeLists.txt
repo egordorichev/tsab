@@ -41,28 +41,35 @@ endif()
 
 include_directories(include/ libs/lit/include/ libs/ libs/box2d/include/ libs/imgui/ libs/SDL_gpu/include/)
 
+option(BOX2D_BUILD_DOCS "" OFF)
+option(BOX2D_BUILD_UNIT_TESTS "" OFF)
+option(BOX2D_BUILD_TESTBED "" OFF)
+
+add_subdirectory(libs/box2d)
 add_subdirectory(libs/lit)
 add_subdirectory(libs/SDL_gpu)
 
+file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/tsab/*.cpp)
+
 if (EMSCRIPTEN)
 	set(TSAB_EMBED_BYTECODE ON)
-	file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/tsab/*.cpp)
-else()
-	file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/tsab/*.cpp)
 endif()
 
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/default_font.c
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/embedfile default_font ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/default_font.ttf)
 
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/gamecontrollerdb.c
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/embedfile gamecontrollerdb ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/gamecontrollerdb.txt)
 
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/prefix.c
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/embedfile prefix ${CMAKE_CURRENT_SOURCE_DIR}/assets/prefix.lit
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/prefix.lit)
 
@@ -86,8 +93,13 @@ endif()
 
 add_library(tsab STATIC ${embed_resources})
 
-set_target_properties(tsab PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
-set_target_properties(tsab PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+if (TSAB_BUILD_ANDROID)
+	set_target_properties(tsab PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist/${CMAKE_ANDROID_ARCH_ABI}")
+	set_target_properties(tsab PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist/${CMAKE_ANDROID_ARCH_ABI}")
+else()
+	set_target_properties(tsab PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+	set_target_properties(tsab PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+endif()
 
 if (TSAB_BUILD_BINARY)
 	if (EMSCRIPTEN)
@@ -95,7 +107,6 @@ if (TSAB_BUILD_BINARY)
 		set_target_properties(tsab PROPERTIES LINK_FLAGS "-s BINARYEN_TRAP_MODE='clamp' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_OGG=1 -s USE_VORBIS=1 --shell-file src/html/shell.html -o index.html")
 
 		include_directories(${BOX2D_INCLUDE_DIR})
-		target_link_libraries(tsab LINK_PUBLIC lit ${CMAKE_CURRENT_SOURCE_DIR}/libs/box2d/src/libbox2d.a ${CMAKE_CURRENT_SOURCE_DIR}/libs/lit/dist/liblit.bc SDL_gpu)
 		add_executable(tsabc src/html/main.cpp)
 	else()
 		if (TSAB_TARGET_PREBUILD_SDL)
@@ -104,12 +115,13 @@ if (TSAB_BUILD_BINARY)
 			target_link_libraries(tsab LINK_PUBLIC ${SDL2_LIBRARY} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARY} ${SDL2_MIXER_LIBRARY} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
 		endif()
 
-		target_link_libraries(tsab LINK_PUBLIC lit ${CMAKE_CURRENT_SOURCE_DIR}/libs/box2d/build/src/libbox2d.a SDL_gpu)
 		add_executable(tsabc src/native/main.cpp)
 	endif()
 
-	target_link_libraries(tsabc tsab)
-
+	target_link_libraries(tsabc LINK_PUBLIC tsab lit box2d SDL_gpu)
 	set_target_properties(tsabc PROPERTIES OUTPUT_NAME "tsab")
 	install(TARGETS tsabc DESTINATION bin)
+elseif(TSAB_TARGET_PREBUILD_SDL)
+	add_definitions(-DIMGUI_IMPL_OPENGL_ES2)
+	target_link_libraries(tsab LINK_PUBLIC android EGL GLESv2 box2d lit SDL2 SDL2_image SDL2_gfx SDL2_mixer SDL2_ttf SDL_gpu)
 endif()

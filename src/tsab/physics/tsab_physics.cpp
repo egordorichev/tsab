@@ -25,7 +25,8 @@ static void destroy_world(LitState* state) {
 		b2Body* body = world->GetBodyList();
 
 		while (body != nullptr) {
-			*extract_body_data_from_instance(state, (LitInstance*) body->GetUserData()) = nullptr;
+			// can be really wrong, i'm not sure, was fixing for tsab-android
+			*extract_body_data_from_instance(state, (LitInstance*) body->GetUserData().pointer) = nullptr;
 			body = body->GetNext();
 		}
 
@@ -71,7 +72,7 @@ void cleanup_body(LitState* state, LitUserdata* data) {
 		b2Body* body = (b2Body*) data->data;
 
 		if (body != nullptr) {
-			body->SetUserData(nullptr);
+			body->GetUserData().pointer = (uintptr_t) nullptr;
 			world->DestroyBody(body);
 		}
 	}
@@ -105,7 +106,7 @@ LIT_METHOD(body_constructor) {
 	userdata->data = body;
 	lit_table_set(vm->state, &AS_INSTANCE(instance)->fields, CONST_STRING(vm->state, "_data"), OBJECT_VALUE(userdata));
 
-	body->SetUserData((void*) AS_INSTANCE(instance));
+	body->GetUserData().pointer = (uintptr_t) AS_INSTANCE(instance);
 
 	b2FixtureDef fixture;
 	fixture.density = 1;
