@@ -69,9 +69,13 @@ static bool handle(LitInterpretResult result) {
 	return true;
 }
 
+void tsab_call_method(const char* name, LitValue* args, uint arg_count) {
+	handle(call_tsab_method(CONST_STRING(state, name), args, arg_count));
+}
+
 bool tsab_init() {
 	tsab_inited = true;
-	
+
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		tsab_report_sdl_error();
 		return false;
@@ -146,7 +150,7 @@ void tsab_quit() {
 	}
 
 	tsab_inited = false;
-	
+
 	if (state != nullptr) {
 		lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "destroy")), nullptr, 0);
 		lit_free_state(state);
@@ -249,6 +253,10 @@ static LitInstance* configure() {
 
 float tsab_get_dt() {
 	return delta / 1000.0f;
+}
+
+LitState* tsab_get_state() {
+	return state;
 }
 
 void tsab_error(const char* message) {

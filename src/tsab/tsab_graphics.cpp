@@ -699,6 +699,17 @@ LIT_METHOD(tsab_window_hidden_set) {
 	return NULL_VALUE;
 }
 
+LIT_METHOD(tsab_window_cursor_get) {
+	return !SDL_ShowCursor(SDL_QUERY) ? TRUE_VALUE : FALSE_VALUE;
+}
+
+LIT_METHOD(tsab_window_cursor_set) {
+	bool hide = LIT_CHECK_BOOL(0);
+	SDL_ShowCursor(hide ? SDL_DISABLE : SDL_ENABLE);
+
+	return NULL_VALUE;
+}
+
 LIT_METHOD(tsab_window_minimize) {
 	SDL_MinimizeWindow(window);
 	return NULL_VALUE;
@@ -788,6 +799,7 @@ void tsab_graphics_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("Window")
 		LIT_BIND_STATIC_FIELD("title", tsab_window_title_get, tsab_window_title_set)
 		LIT_BIND_STATIC_FIELD("hidden", tsab_window_hidden_get, tsab_window_hidden_set)
+		LIT_BIND_STATIC_FIELD("showCursor", tsab_window_cursor_get, tsab_window_cursor_set)
 		LIT_BIND_STATIC_METHOD("minimize", tsab_window_minimize)
 		LIT_BIND_STATIC_METHOD("maximize", tsab_window_maximize)
 		LIT_BIND_STATIC_METHOD("restore", tsab_window_restore)

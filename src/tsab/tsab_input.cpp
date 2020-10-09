@@ -5,6 +5,7 @@
 #include <map>
 #include <cstring>
 #include <iostream>
+#include <tsab/tsab.hpp>
 
 static Uint8 *input_previous_gamepad_button_state = nullptr;
 static Uint8 *input_current_gamepad_button_state = nullptr;
@@ -19,79 +20,85 @@ extern "C" const char gamecontrollerdb[];
 extern "C" const size_t gamecontrollerdb_len;
 
 static std::map<std::string, int> key_map;
+static std::map<int, std::string> key_names;
+
+static void register_key(std::string key, SDL_Scancode code) {
+	key_map[key] = code;
+	key_names[code] = key;
+}
 
 static void setup_key_map() {
-	key_map["a"] = SDL_SCANCODE_A;
-	key_map["b"] = SDL_SCANCODE_B;
-	key_map["c"] = SDL_SCANCODE_C;
-	key_map["d"] = SDL_SCANCODE_D;
-	key_map["e"] = SDL_SCANCODE_E;
-	key_map["f"] = SDL_SCANCODE_F;
-	key_map["g"] = SDL_SCANCODE_G;
-	key_map["h"] = SDL_SCANCODE_H;
-	key_map["i"] = SDL_SCANCODE_I;
-	key_map["j"] = SDL_SCANCODE_J;
-	key_map["k"] = SDL_SCANCODE_K;
-	key_map["l"] = SDL_SCANCODE_L;
-	key_map["m"] = SDL_SCANCODE_M;
-	key_map["n"] = SDL_SCANCODE_N;
-	key_map["o"] = SDL_SCANCODE_O;
-	key_map["p"] = SDL_SCANCODE_P;
-	key_map["q"] = SDL_SCANCODE_Q;
-	key_map["r"] = SDL_SCANCODE_R;
-	key_map["s"] = SDL_SCANCODE_S;
-	key_map["t"] = SDL_SCANCODE_T;
-	key_map["u"] = SDL_SCANCODE_U;
-	key_map["v"] = SDL_SCANCODE_V;
-	key_map["w"] = SDL_SCANCODE_W;
-	key_map["x"] = SDL_SCANCODE_X;
-	key_map["y"] = SDL_SCANCODE_Y;
-	key_map["z"] = SDL_SCANCODE_Z;
-	key_map["0"] = SDL_SCANCODE_0;
-	key_map["1"] = SDL_SCANCODE_1;
-	key_map["2"] = SDL_SCANCODE_2;
-	key_map["3"] = SDL_SCANCODE_3;
-	key_map["4"] = SDL_SCANCODE_4;
-	key_map["5"] = SDL_SCANCODE_5;
-	key_map["6"] = SDL_SCANCODE_6;
-	key_map["7"] = SDL_SCANCODE_7;
-	key_map["8"] = SDL_SCANCODE_8;
-	key_map["9"] = SDL_SCANCODE_9;
-	key_map["f1"] = SDL_SCANCODE_F1;
-	key_map["f2"] = SDL_SCANCODE_F2;
-	key_map["f3"] = SDL_SCANCODE_F3;
-	key_map["f4"] = SDL_SCANCODE_F4;
-	key_map["f5"] = SDL_SCANCODE_F5;
-	key_map["f6"] = SDL_SCANCODE_F6;
-	key_map["f7"] = SDL_SCANCODE_F7;
-	key_map["f8"] = SDL_SCANCODE_F8;
-	key_map["f9"] = SDL_SCANCODE_F9;
-	key_map["f10"] = SDL_SCANCODE_F10;
-	key_map["f11"] = SDL_SCANCODE_F11;
-	key_map["f12"] = SDL_SCANCODE_F12;
-	key_map["space"] = SDL_SCANCODE_SPACE;
-	key_map["lshift"] = SDL_SCANCODE_LSHIFT;
-	key_map["rshift"] = SDL_SCANCODE_RSHIFT;
-	key_map["rcontrol"] = SDL_SCANCODE_LCTRL;
-	key_map["lcontrol"] = SDL_SCANCODE_RCTRL;
-	key_map["lalt"] = SDL_SCANCODE_LALT;
-	key_map["ralt"] = SDL_SCANCODE_RALT;
-	key_map["capslock"] = SDL_SCANCODE_CAPSLOCK;
-	key_map["tab"] = SDL_SCANCODE_TAB;
-	key_map["escape"] = SDL_SCANCODE_ESCAPE;
-	key_map["delete"] = SDL_SCANCODE_DELETE;
-	key_map["backspace"] = SDL_SCANCODE_BACKSPACE;
-	key_map["slash"] = SDL_SCANCODE_SLASH;
-	key_map["bslash"] = SDL_SCANCODE_BACKSLASH;
-	key_map["home"] = SDL_SCANCODE_HOME;
-	key_map["end"] = SDL_SCANCODE_END;
-	key_map["page_up"] = SDL_SCANCODE_PAGEUP;
-	key_map["page_down"] = SDL_SCANCODE_PAGEDOWN;
-	key_map["left"] = SDL_SCANCODE_LEFT;
-	key_map["right"] = SDL_SCANCODE_RIGHT;
-	key_map["up"] = SDL_SCANCODE_UP;
-	key_map["down"] = SDL_SCANCODE_DOWN;
-	key_map["comma"] = SDL_SCANCODE_COMMA;
+	register_key("a", SDL_SCANCODE_A);
+	register_key("b", SDL_SCANCODE_B);
+	register_key("c", SDL_SCANCODE_C);
+	register_key("d", SDL_SCANCODE_D);
+	register_key("e", SDL_SCANCODE_E);
+	register_key("f", SDL_SCANCODE_F);
+	register_key("g", SDL_SCANCODE_G);
+	register_key("h", SDL_SCANCODE_H);
+	register_key("i", SDL_SCANCODE_I);
+	register_key("j", SDL_SCANCODE_J);
+	register_key("k", SDL_SCANCODE_K);
+	register_key("l", SDL_SCANCODE_L);
+	register_key("m", SDL_SCANCODE_M);
+	register_key("n", SDL_SCANCODE_N);
+	register_key("o", SDL_SCANCODE_O);
+	register_key("p", SDL_SCANCODE_P);
+	register_key("q", SDL_SCANCODE_Q);
+	register_key("r", SDL_SCANCODE_R);
+	register_key("s", SDL_SCANCODE_S);
+	register_key("t", SDL_SCANCODE_T);
+	register_key("u", SDL_SCANCODE_U);
+	register_key("v", SDL_SCANCODE_V);
+	register_key("w", SDL_SCANCODE_W);
+	register_key("x", SDL_SCANCODE_X);
+	register_key("y", SDL_SCANCODE_Y);
+	register_key("z", SDL_SCANCODE_Z);
+	register_key("0", SDL_SCANCODE_0);
+	register_key("1", SDL_SCANCODE_1);
+	register_key("2", SDL_SCANCODE_2);
+	register_key("3", SDL_SCANCODE_3);
+	register_key("4", SDL_SCANCODE_4);
+	register_key("5", SDL_SCANCODE_5);
+	register_key("6", SDL_SCANCODE_6);
+	register_key("7", SDL_SCANCODE_7);
+	register_key("8", SDL_SCANCODE_8);
+	register_key("9", SDL_SCANCODE_9);
+	register_key("f1", SDL_SCANCODE_F1);
+	register_key("f2", SDL_SCANCODE_F2);
+	register_key("f3", SDL_SCANCODE_F3);
+	register_key("f4", SDL_SCANCODE_F4);
+	register_key("f5", SDL_SCANCODE_F5);
+	register_key("f6", SDL_SCANCODE_F6);
+	register_key("f7", SDL_SCANCODE_F7);
+	register_key("f8", SDL_SCANCODE_F8);
+	register_key("f9", SDL_SCANCODE_F9);
+	register_key("f10", SDL_SCANCODE_F10);
+	register_key("f11", SDL_SCANCODE_F11);
+	register_key("f12", SDL_SCANCODE_F12);
+	register_key("space", SDL_SCANCODE_SPACE);
+	register_key("lshift", SDL_SCANCODE_LSHIFT);
+	register_key("rshift", SDL_SCANCODE_RSHIFT);
+	register_key("rcontrol", SDL_SCANCODE_LCTRL);
+	register_key("lcontrol", SDL_SCANCODE_RCTRL);
+	register_key("lalt", SDL_SCANCODE_LALT);
+	register_key("ralt", SDL_SCANCODE_RALT);
+	register_key("capslock", SDL_SCANCODE_CAPSLOCK);
+	register_key("tab", SDL_SCANCODE_TAB);
+	register_key("escape", SDL_SCANCODE_ESCAPE);
+	register_key("delete", SDL_SCANCODE_DELETE);
+	register_key("backspace", SDL_SCANCODE_BACKSPACE);
+	register_key("slash", SDL_SCANCODE_SLASH);
+	register_key("bslash", SDL_SCANCODE_BACKSLASH);
+	register_key("home", SDL_SCANCODE_HOME);
+	register_key("end", SDL_SCANCODE_END);
+	register_key("page_up", SDL_SCANCODE_PAGEUP);
+	register_key("page_down", SDL_SCANCODE_PAGEDOWN);
+	register_key("left", SDL_SCANCODE_LEFT);
+	register_key("right", SDL_SCANCODE_RIGHT);
+	register_key("up", SDL_SCANCODE_UP);
+	register_key("down", SDL_SCANCODE_DOWN);
+	register_key("comma", SDL_SCANCODE_COMMA);
 
 	key_map["mouse1"] = MOUSE_1;
 	key_map["mouse2"] = MOUSE_2;
@@ -212,6 +219,7 @@ void tsab_input_handle_event(SDL_Event *event) {
 					std::cerr << "Failed to connect controller: " << SDL_GetError() << "\n";
 				} else {
 					std::cout << "Registered controller\n";
+					tsab_call_method("controllerConnected", nullptr, 0);
 				}
 			}
 
@@ -223,6 +231,29 @@ void tsab_input_handle_event(SDL_Event *event) {
 			if (controller == reinterpret_cast<SDL_GameController *>(event->cdevice.which)) {
 				controller = nullptr;
 				std::cout << "Removed controller\n";
+				tsab_call_method("controllerDisconnected", nullptr, 0);
+			}
+
+			break;
+		}
+
+		case SDL_KEYDOWN: {
+			auto name = key_names.find(event->key.keysym.scancode);
+
+			if (name != key_names.end()) {
+				LitValue key = OBJECT_VALUE(lit_copy_string(tsab_get_state(), name->second.c_str(), name->second.length()));
+				tsab_call_method("keyPressed", &key, 1);
+			}
+
+			break;
+		}
+
+		case SDL_KEYUP: {
+			auto name = key_names.find(event->key.keysym.scancode);
+
+			if (name != key_names.end()) {
+				LitValue key = OBJECT_VALUE(lit_copy_string(tsab_get_state(), name->second.c_str(), name->second.length()));
+				tsab_call_method("keyReleased", &key, 1);
 			}
 
 			break;
