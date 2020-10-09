@@ -85,16 +85,12 @@ bool tsab_graphics_init(LitState* state, LitInstance* config) {
 	window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE);
 
 	if (window == nullptr) {
-		tsab_report_sdl_error();
 		return false;
 	}
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
 	if (window == nullptr) {
-		tsab_report_sdl_error();
-		SDL_DestroyWindow(window);
-
 		return false;
 	}
 
@@ -115,11 +111,6 @@ bool tsab_graphics_init(LitState* state, LitInstance* config) {
 	screen = GPU_Init(width, height, GPU_DEFAULT_INIT_FLAGS);
 
 	if (screen == nullptr) {
-		tsab_report_sdl_error();
-
-		SDL_DestroyRenderer(renderer);
-		SDL_DestroyWindow(window);
-
 		return false;
 	}
 
@@ -159,8 +150,13 @@ void tsab_graphics_quit() {
 
 	GPU_Quit();
 
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
+	if (renderer != nullptr) {
+		SDL_DestroyRenderer(renderer);
+	}
+
+	if (window != nullptr) {
+		SDL_DestroyWindow(window);
+	}
 }
 
 void tsab_graphics_begin_frame(float dt) {

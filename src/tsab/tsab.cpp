@@ -16,28 +16,36 @@
 #include <cstring>
 #include <iostream>
 
-static LitState* state;
+static bool tsab_inited;
+static LitState* state = nullptr;
 static SDL_Event event;
 
-static LitInstance* tsab;
-static LitString* update_string;
-static LitString* render_string;
+static LitInstance* tsab = nullptr;
+static LitString* update_string = nullptr;
+static LitString* render_string = nullptr;
 
 static int start_time;
 static int end_time;
 static float delta;
 static float time_per_frame = 1000.0f / 60;
 static float fps;
+static LitValue last_error = NULL_VALUE;
 
 static LitInstance* configure();
 static LitModule* main_module;
 
-static void error_callback(LitState* state, LitErrorType type, const char* message, va_list args) {
+extern "C" const char prefix[];
+
+#ifdef EMBED_BYTECODE
+extern "C" const char bytecode[];
+#endif
+
+static void error_callback(LitState* state, const char* message) {
 	fflush(stdout);
-	fprintf(stderr, COLOR_RED);
-	vfprintf(stderr, message, args);
-	fprintf(stderr, "%s\n", COLOR_RESET);
+	fprintf(stderr, "%s%s%s", COLOR_RED, message, COLOR_RESET);
 	fflush(stderr);
+
+	last_error = OBJECT_CONST_STRING(state, message);
 }
 
 static LitInterpretResult call_tsab_method(LitString* name, LitValue* args, uint arg_count) {
@@ -55,17 +63,15 @@ static bool handle(LitInterpretResult result) {
 		return false;
 	}
 
-	call_tsab_method(CONST_STRING(state, "handleError"), &result.result, 1);
+	call_tsab_method(CONST_STRING(state, "handleError"), result.result == NULL_VALUE ? &last_error : &result.result, 1);
+	last_error = NULL_VALUE;
+
 	return true;
 }
 
-extern "C" const char prefix[];
-
-#ifdef EMBED_BYTECODE
-	extern "C" const char bytecode[];
-#endif
-
 bool tsab_init() {
+	tsab_inited = true;
+	
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		tsab_report_sdl_error();
 		return false;
@@ -81,7 +87,7 @@ bool tsab_init() {
 	LitValue value = lit_get_global(state, CONST_STRING(state, "tsab"));
 
 	if (!IS_INSTANCE(value)) {
-		std::cout << "Failed to find tsab instance\n";
+		tsab_fatal_error("tsab instance is missing");
 		return false;
 	}
 
@@ -89,7 +95,7 @@ bool tsab_init() {
 	LitInstance* config = configure();
 
 	if (!tsab_graphics_init(state, config)) {
-		SDL_Quit();
+		tsab_report_sdl_error();
 		return false;
 	}
 
@@ -112,7 +118,7 @@ bool tsab_init() {
 	#ifdef EMBED_BYTECODE
 		main_module = lit_get_module(state, "main");
 
-		if (main_module == NULL) {
+		if (main_module == nullptr) {
 			std::cout << "Main module is missing\n";
 			return false;
 		}
@@ -124,7 +130,7 @@ bool tsab_init() {
 	#endif
 
 	if (!handle(result)) {
-		handle(call_tsab_method(CONST_STRING(state, "init"), NULL, 0));
+		handle(call_tsab_method(CONST_STRING(state, "init"), nullptr, 0));
 	}
 
 	update_string = CONST_STRING(state, "update");
@@ -135,8 +141,16 @@ bool tsab_init() {
 }
 
 void tsab_quit() {
-	lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "destroy")), NULL, 0);
-	lit_free_state(state);
+	if (!tsab_inited) {
+		return;
+	}
+
+	tsab_inited = false;
+	
+	if (state != nullptr) {
+		lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "destroy")), nullptr, 0);
+		lit_free_state(state);
+	}
 
 	tsab_physics_quit(state);
 	tsab_input_quit();
@@ -164,7 +178,7 @@ bool tsab_frame() {
 		tsab_graphics_handle_event(&event);
 	}
 
-	float realDelta = delta / 1000.0;
+	float realDelta = delta / 1000.0f;
 	LitValue dt = NUMBER_VALUE(realDelta);
 	LitInterpretResult interpret_result = call_tsab_method(update_string, &dt, 1);
 
@@ -177,10 +191,10 @@ bool tsab_frame() {
 	tsab_input_update();
 	tsab_graphics_begin_frame(realDelta);
 
-	handle(call_tsab_method(render_string, NULL, 0));
+	handle(call_tsab_method(render_string, nullptr, 0));
 	tsab_graphics_finish_frame();
 
-	delta = end_time - start_time;
+	delta = (float) end_time - (float) start_time;
 
 	if (delta < time_per_frame) {
 		SDL_Delay(time_per_frame - delta);
@@ -218,7 +232,7 @@ static LitInstance* configure() {
 		return nullptr;
 	}
 
-	conf = call_tsab_method(CONST_STRING(state, "configure"), NULL, 0);
+	conf = call_tsab_method(CONST_STRING(state, "configure"), nullptr, 0);
 
 	if (handle(conf)) {
 		return nullptr;
@@ -234,5 +248,14 @@ static LitInstance* configure() {
 }
 
 float tsab_get_dt() {
-	return delta / 1000.0;
+	return delta / 1000.0f;
+}
+
+void tsab_error(const char* message) {
+	std::cerr << message << std::endl;
+}
+
+void tsab_fatal_error(const char* message) {
+	tsab_error(message);
+	tsab_quit();
 }

@@ -22,7 +22,7 @@ function drawText(str, x, y, color, f) {
 }
 
 function tsab.handleError(err) {
-	error = err
+	error = err ?? "unknown"
 
 	Graphics.setCanvas()
 	Graphics.setClearColor(0)
@@ -37,4 +37,8 @@ function tsab.handleError(err) {
 	tsab.update = () => {
 		return Input.wasPressed("escape")
 	}
+}
+
+function tsab.render() {
+	Graphics.print("No game", 10, 10)
 }

@@ -6,14 +6,14 @@
 #include <cstring>
 #include <iostream>
 
-static Uint8 *input_previous_gamepad_button_state;
-static Uint8 *input_current_gamepad_button_state;
-static Sint16 *input_gamepad_axis_state;
-static Uint8 *input_previous_mouse_state;
-static Uint8 *input_current_mouse_state;
-static Uint8 *input_previous_keyboard_state;
+static Uint8 *input_previous_gamepad_button_state = nullptr;
+static Uint8 *input_current_gamepad_button_state = nullptr;
+static Sint16 *input_gamepad_axis_state = nullptr;
+static Uint8 *input_previous_mouse_state = nullptr;
+static Uint8 *input_current_mouse_state = nullptr;
+static Uint8 *input_previous_keyboard_state = nullptr;
 static SDL_GameController *controller = nullptr;
-static const Uint8 *input_current_keyboard_state;
+static const Uint8 *input_current_keyboard_state = nullptr;
 
 extern "C" const char gamecontrollerdb[];
 extern "C" const size_t gamecontrollerdb_len;
@@ -142,9 +142,17 @@ void tsab_input_init() {
 }
 
 void tsab_input_quit() {
-	delete input_previous_mouse_state;
-	delete input_current_mouse_state;
-	delete input_previous_keyboard_state;
+	if (input_previous_mouse_state != nullptr) {
+		delete input_previous_mouse_state;
+	}
+
+	if (input_current_mouse_state != nullptr) {
+		delete input_current_mouse_state;
+	}
+
+	if (input_previous_gamepad_button_state != nullptr) {
+		delete input_previous_keyboard_state;
+	}
 }
 
 void tsab_input_update() {

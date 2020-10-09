@@ -2,12 +2,9 @@
 
 * flute
 * aseprite loader
-* errorscreen stacktrace
-* error while executing code in not a function will fail? cuz error is null somehow?
 
 * contact detection
 * raycasting
-* graceful error handling with no game (lagged my laptop to death)
 
 * show/hide cursor
 * rendering rotated rect?

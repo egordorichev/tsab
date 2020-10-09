@@ -45,6 +45,8 @@ option(BOX2D_BUILD_DOCS "" OFF)
 option(BOX2D_BUILD_UNIT_TESTS "" OFF)
 option(BOX2D_BUILD_TESTBED "" OFF)
 
+add_definitions(-DLIT_DISABLE_COLOR)
+
 add_subdirectory(libs/box2d)
 add_subdirectory(libs/lit)
 add_subdirectory(libs/SDL_gpu)
@@ -79,8 +81,8 @@ list(APPEND embed_resources ${SOURCE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/dist/def
 	${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui_draw.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui_widgets.cpp ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/imgui.cpp)
 
 if(TSAB_EMBED_BYTECODE)
-	MESSAGE("Embeding bytecode...")
-	ADD_DEFINITIONS(-DEMBED_BYTECODE)
+	message("Embeding bytecode...")
+	add_definitions(-DEMBED_BYTECODE)
 
 	add_custom_command(
 		OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dist/bytecode.c
