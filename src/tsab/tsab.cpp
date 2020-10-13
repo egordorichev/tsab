@@ -1,6 +1,6 @@
 #include <tsab/tsab.hpp>
 #include <tsab/tsab_common.hpp>
-#include <tsab/tsab_graphics.hpp>
+#include <tsab/graphics/tsab_graphics.hpp>
 #include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_audio.hpp>
 #include <tsab/tsab_input.hpp>

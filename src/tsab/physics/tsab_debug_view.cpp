@@ -1,6 +1,6 @@
 #include <tsab/physics/tsab_debug_view.hpp>
 #include <tsab/tsab_shaders.hpp>
-#include <tsab/tsab_graphics.hpp>
+#include <tsab/graphics/tsab_graphics.hpp>
 
 static void update_shader(const b2Color& color) {
 	if (tsab_shaders_get_active() > -1) {

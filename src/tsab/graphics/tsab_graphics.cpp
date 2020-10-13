@@ -1,4 +1,6 @@
-#include <tsab/tsab_graphics.hpp>
+#include <tsab/graphics/tsab_graphics.hpp>
+#include <tsab/graphics/tsab_texture_region.hpp>
+#include <tsab/graphics/tsab_animation.hpp>
 #include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_common.hpp>
 
@@ -23,7 +25,7 @@ static SDL_Renderer* renderer;
 static GPU_Target *screen;
 static GPU_Image *current_target;
 
-static std::vector<GPU_Image *> canvas_list;
+static std::vector<GPU_Image *> image_list;
 static std::vector<TTF_Font *> fonts;
 static TTF_Font *active_font;
 static bool pushed = false;
@@ -144,8 +146,8 @@ void tsab_graphics_get_ready() {
 }
 
 void tsab_graphics_quit() {
-	for (int i = 0; i < canvas_list.size(); i++) {
-		GPU_FreeImage(canvas_list[i]);
+	for (int i = 0; i < image_list.size(); i++) {
+		GPU_FreeImage(image_list[i]);
 	}
 
 	GPU_Quit();
@@ -170,6 +172,14 @@ void tsab_graphics_finish_frame() {
 
 void tsab_graphics_clear_screen() {
 	GPU_ClearRGBA(screen, bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
+}
+
+GPU_Image* tsab_graphics_get_image(int id) {
+	if (id < 0 || id >= image_list.size()) {
+		return nullptr;
+	}
+
+	return image_list[id];
 }
 
 /*
@@ -222,16 +232,16 @@ LIT_METHOD(tsab_graphics_new_canvas) {
 	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
 	GPU_LoadTarget(image);
 
-	canvas_list.push_back(image);
+	image_list.push_back(image);
 
-	return NUMBER_VALUE(canvas_list.size() - 1);
+	return NUMBER_VALUE(image_list.size() - 1);
 }
 
 LIT_METHOD(tsab_graphics_set_canvas) {
 	int id = LIT_GET_NUMBER(0, -1);
 
-	if (id > -1 && id < canvas_list.size()) {
-		current_target = canvas_list[id];
+	if (id > -1 && id < image_list.size()) {
+		current_target = image_list[id];
 	} else {
 		current_target = nullptr;
 	}
@@ -253,9 +263,9 @@ LIT_METHOD(tsab_graphics_new_image) {
 	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
 	GPU_LoadTarget(image);
 
-	canvas_list.push_back(image);
+	image_list.push_back(image);
 
-	return NUMBER_VALUE(canvas_list.size() - 1);
+	return NUMBER_VALUE(image_list.size() - 1);
 }
 
 LIT_METHOD(tsab_graphics_set_clear_color) {
@@ -389,32 +399,44 @@ LIT_METHOD(tsab_graphics_set_color) {
 }
 
 LIT_METHOD(tsab_graphics_draw) {
+	LIT_ENSURE_MIN_ARGS(1)
 	tsab_shaders_set_textured(true);
 
 	auto *target = CURRENT_TARGET;
-
 	GPU_Image *what = nullptr;
-	int id = LIT_CHECK_NUMBER(0);
 
-	if (id > -1 && id < canvas_list.size()) {
-		what = canvas_list[id];
+	float x = LIT_GET_NUMBER(1, 0);
+	float y = LIT_GET_NUMBER(2, 0);
+	float a = LIT_GET_NUMBER(3, 0);
+	float ox = LIT_GET_NUMBER(4, 0);
+	float oy = LIT_GET_NUMBER(5, 0);
+	float sx = LIT_GET_NUMBER(6, 1);
+	float sy = LIT_GET_NUMBER(7, 1);
+	float src_x = LIT_GET_NUMBER(8, 0);
+	float src_y = LIT_GET_NUMBER(9, 0);
+
+	TextureRegion* region = nullptr;
+
+	if (IS_NUMBER(args[0])) {
+		what = tsab_graphics_get_image(AS_NUMBER(args[0]));
+	} else if (IS_INSTANCE(args[0])) {
+		region = LIT_EXTRACT_DATA_FROM(args[0], TextureRegion);
+		what = region->texture;
 	}
 
 	if (what == nullptr) {
 		return NULL_VALUE;
 	}
 
-	double x = LIT_GET_NUMBER(1, 0);
-	double y = LIT_GET_NUMBER(2, 0);
-	double a = LIT_GET_NUMBER(3, 0);
-	double ox = LIT_GET_NUMBER(4, 0);
-	double oy = LIT_GET_NUMBER(5, 0);
-	double sx = LIT_GET_NUMBER(6, 1);
-	double sy = LIT_GET_NUMBER(7, 1);
-	double src_x = LIT_GET_NUMBER(8, 0);
-	double src_y = LIT_GET_NUMBER(9, 0);
-	double src_w = LIT_GET_NUMBER(10, what->w);
-	double src_h = LIT_GET_NUMBER(11, what->h);
+	float src_w = LIT_GET_NUMBER(10, what->w);
+	float src_h = LIT_GET_NUMBER(11, what->h);
+
+	if (region != nullptr) {
+		src_x = region->x;
+		src_y = region->y;
+		src_w = region->w;
+		src_h = region->h;
+	}
 
 	GPU_Rect r = GPU_MakeRect(src_x, src_y, src_w, src_h);
 	GPU_SetRGBA(what, current_color.r, current_color.g, current_color.b, current_color.a);
@@ -843,6 +865,9 @@ void tsab_graphics_bind_api(LitState* state) {
 
 		LIT_BIND_STATIC_METHOD("setShader", tsab_graphics_set_shader)
 	LIT_END_CLASS()
+
+	tsab_texture_region_bind_api(state);
+	tsab_animation_bind_api(state);
 }
 
 #undef CURRENT_TARGET
