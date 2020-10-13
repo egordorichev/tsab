@@ -1,17 +1,49 @@
 #include <tsab/graphics/tsab_animation.hpp>
 #include <tsab/graphics/tsab_graphics.hpp>
+#include <tsab/graphics/tsab_texture_region.hpp>
 
 #define CUTE_ASEPRITE_IMPLEMENTATION
 #include "cute_aseprite.h"
 
 #include <SDL_gpu.h>
 
+#include <vector>
+#include <map>
+
+typedef struct {
+	int x;
+	float duration;
+} AnimationFrame;
+
+typedef enum {
+	DIRECTION_FORWARD,
+	DIRECTION_BACKWARDS,
+	DIRECTION_PINGPONG
+} AnimationDirection;
+
+typedef struct {
+	uint16_t start_frame;
+	uint16_t end_frame;
+
+	AnimationDirection direction;
+} AnimationTag;
+
 typedef struct {
 	GPU_Image* texture;
-} Animation;
 
+	AnimationFrame* frames;
+	int frame_count;
+	std::map<std::string, AnimationTag>* tags;
+} AnimationData;
 
-LIT_METHOD(aseprite_constructor) {
+void cleanup_animation_data(LitState* state, LitUserdata* d) {
+	auto data = (AnimationData*) d->data;
+
+	delete data->frames;
+	delete data->tags;
+}
+
+LIT_METHOD(animation_data_constructor) {
 	const char* path = LIT_CHECK_STRING(0);
 	ase_t* ase = cute_aseprite_load_from_file(path, nullptr);
 
@@ -52,7 +84,6 @@ LIT_METHOD(aseprite_constructor) {
 		}
 	}
 
-	cute_aseprite_free(ase);
 	SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels, w, h, 32, 4 * w, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 
 	GPU_Image* texture = GPU_CopyImageFromSurface(surface);
@@ -61,20 +92,37 @@ LIT_METHOD(aseprite_constructor) {
 
 	tsab_graphics_add_image(texture);
 
-	Animation* data = LIT_INSERT_DATA(Animation, nullptr);
-	data->texture = texture;
+	AnimationData* data = LIT_INSERT_DATA(AnimationData, cleanup_animation_data);
 
+	data->texture = texture;
+	data->tags = new std::map<std::string, AnimationTag>();
+
+	for (int i = 0; i < ase->tag_count; i++) {
+		auto tag = ase->tags[i];
+
+		(*data->tags)[tag.name] = (AnimationTag) {
+			(uint16_t) tag.from_frame,
+			(uint16_t) tag.to_frame,
+			(AnimationDirection) tag.loop_animation_direction
+		};
+	}
+
+	data->frame_count = ase->frame_count;
+	data->frames = new AnimationFrame[data->frame_count];
+
+	for (int i = 0; i < data->frame_count; i++) {
+		data->frames[i] = (AnimationFrame) {
+			i * ase->w,
+			ase->frames[i].duration_milliseconds / 1000.0f
+		};
+	}
+
+	cute_aseprite_free(ase);
 	return instance;
 }
 
-LIT_METHOD(aseprite_update) {
-	float dt = LIT_CHECK_NUMBER(0);
-
-	return NULL_VALUE;
-}
-
 void tsab_animation_bind_api(LitState* state) {
-	LIT_BEGIN_CLASS("Animation")
-		LIT_BIND_CONSTRUCTOR(aseprite_constructor)
+	LIT_BEGIN_CLASS("AnimationData")
+		LIT_BIND_CONSTRUCTOR(animation_data_constructor)
 	LIT_END_CLASS()
 }
