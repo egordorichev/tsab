@@ -1,31 +1,15 @@
 #include <tsab/graphics/tsab_animation.hpp>
+#include <tsab/graphics/tsab_graphics.hpp>
 
 #define CUTE_ASEPRITE_IMPLEMENTATION
 #include "cute_aseprite.h"
 
+#include <SDL_gpu.h>
+
 typedef struct {
-	ase_t* ase;
+	GPU_Image* texture;
 } Animation;
 
-static Animation* extract_data(LitState* state, LitValue instance) {
-	LitValue data;
-
-	if (!lit_table_get(&AS_INSTANCE(instance)->fields, CONST_STRING(state, "_data"), &data)) {
-		return nullptr;
-	}
-
-	return (Animation*) AS_USERDATA(data)->data;
-}
-
-void cleanup_data(LitState* state, LitUserdata* d) {
-	Animation* data = ((Animation*) d->data);
-
-	if (data->ase != nullptr) {
-		cute_aseprite_free(data->ase);
-		data->ase = nullptr;
-
-	}
-}
 
 LIT_METHOD(aseprite_constructor) {
 	const char* path = LIT_CHECK_STRING(0);
@@ -35,17 +19,62 @@ LIT_METHOD(aseprite_constructor) {
 		lit_runtime_error(vm, "Failed to open aseprite file %s", path);
 	}
 
-	LitUserdata* userdata = lit_create_userdata(vm->state, sizeof(Animation));
-	userdata->cleanup_fn = cleanup_data;
+	int w = ase->frame_count * ase->w;
+	int h = ase->layer_count * ase->h;
+	auto size = w * h * 4;
 
-	lit_table_set(vm->state, &AS_INSTANCE(instance)->fields, CONST_STRING(vm->state, "_data"), OBJECT_VALUE(userdata));
-	
-	auto data = (Animation*) userdata->data;
-	data->ase = ase;
+	Uint8 pixels[size];
+	memset(pixels, 0, size);
+
+	for (int f = 0; f < ase->frame_count; f++) {
+		auto frame = ase->frames[f];
+
+		if (frame.cel_count == 0) {
+			continue;
+		}
+
+		auto cell = frame.cels[0];
+
+		int cw = fmin(cell.w, ase->w);
+		int ch = fmin(cell.h, ase->h);
+
+		auto pixelData = (Uint8*) frame.pixels;
+
+    for (int celY = 0; celY < ch; celY++) {
+			for (int celX = 0; celX < cw; celX++) {
+				auto index = (celX + celY * ase->w) * 4;
+				auto to = (celX + f * cw + (celY) * w) * 4;
+
+				for (int j = 0; j < 4; j++) {
+					pixels[to + j] = pixelData[index + j];
+				}
+			}
+		}
+	}
+
+	cute_aseprite_free(ase);
+	SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels, w, h, 32, 4 * w, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+
+	GPU_Image* texture = GPU_CopyImageFromSurface(surface);
+	GPU_SetImageFilter(texture, GPU_FILTER_NEAREST);
+	GPU_SetSnapMode(texture, GPU_SNAP_NONE);
+
+	tsab_graphics_add_image(texture);
+
+	Animation* data = LIT_INSERT_DATA(Animation, nullptr);
+	data->texture = texture;
 
 	return instance;
 }
 
+LIT_METHOD(aseprite_update) {
+	float dt = LIT_CHECK_NUMBER(0);
+
+	return NULL_VALUE;
+}
+
 void tsab_animation_bind_api(LitState* state) {
-	
+	LIT_BEGIN_CLASS("Animation")
+		LIT_BIND_CONSTRUCTOR(aseprite_constructor)
+	LIT_END_CLASS()
 }

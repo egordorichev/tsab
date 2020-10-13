@@ -182,6 +182,10 @@ GPU_Image* tsab_graphics_get_image(int id) {
 	return image_list[id];
 }
 
+void tsab_graphics_add_image(GPU_Image* image) {
+	image_list.push_back(image);
+}
+
 /*
  * API
  */
@@ -251,7 +255,6 @@ LIT_METHOD(tsab_graphics_set_canvas) {
 
 LIT_METHOD(tsab_graphics_new_image) {
 	const char *name = LIT_CHECK_STRING(0);
-
 	SDL_Surface *texture = IMG_Load(name);
 
 	if (texture == nullptr) {
@@ -261,10 +264,8 @@ LIT_METHOD(tsab_graphics_new_image) {
 
 	GPU_Image *image = GPU_CopyImageFromSurface(texture);
 	GPU_SetImageFilter(image, GPU_FILTER_NEAREST);
-	GPU_LoadTarget(image);
 
 	image_list.push_back(image);
-
 	return NUMBER_VALUE(image_list.size() - 1);
 }
 
