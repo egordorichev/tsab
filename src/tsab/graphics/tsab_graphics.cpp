@@ -171,7 +171,7 @@ void tsab_graphics_finish_frame() {
 }
 
 void tsab_graphics_clear_screen() {
-	GPU_ClearRGBA(screen, bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
+	GPU_ClearRGBA(tsab_graphics_get_current_target(), bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
 }
 
 GPU_Image* tsab_graphics_get_image(int id) {

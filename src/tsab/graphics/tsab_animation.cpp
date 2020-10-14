@@ -50,6 +50,10 @@ typedef struct {
 void cleanup_animation_data(LitState* state, LitUserdata* d) {
 	auto data = (AnimationData*) d->data;
 
+	for (auto & tag : *data->tags) {
+		delete tag.first;
+	}
+
 	delete data->frames;
 	delete data->tags;
 }
@@ -114,7 +118,12 @@ LIT_METHOD(animation_data_constructor) {
 	for (int i = 0; i < ase->tag_count; i++) {
 		auto tag = ase->tags[i];
 
-		(*data->tags)[(char*) tag.name] = (AnimationTag) {
+		int length = strlen(tag.name) + 1;
+		char* str = new char[length];
+
+		memcpy(str, tag.name, length);
+
+		(*data->tags)[str] = (AnimationTag) {
 			(uint16_t) tag.from_frame,
 			(uint16_t) tag.to_frame,
 			(AnimationDirection) tag.loop_animation_direction
@@ -252,6 +261,23 @@ LIT_METHOD(animation_frame_x) {
 	return NUMBER_VALUE(LIT_EXTRACT_DATA(Animation)->frame->x);
 }
 
+LIT_METHOD(animation_tag) {
+	Animation* animation = LIT_EXTRACT_DATA(Animation);
+
+	if (arg_count == 0) {
+		return OBJECT_CONST_STRING(vm->state, animation->tag);
+	}
+
+	char* tag = (char*) LIT_CHECK_STRING(0);
+
+	if (strcmp(tag, animation->tag) != 0) {
+		animation->tag = tag;
+		setup_frame_info(vm, animation);
+	}
+
+	return args[0];
+}
+
 void tsab_animation_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("AnimationData")
 		LIT_BIND_CONSTRUCTOR(animation_data_constructor)
@@ -266,5 +292,7 @@ void tsab_animation_bind_api(LitState* state) {
 		LIT_BIND_GETTER("width", animation_width)
 		LIT_BIND_GETTER("height", animation_height)
 		LIT_BIND_GETTER("frameX", animation_frame_x)
+
+		LIT_BIND_FIELD("tag", animation_tag, animation_tag)
 	LIT_END_CLASS()
 }
