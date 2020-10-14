@@ -17,7 +17,7 @@ void tsab_graphics_clear_screen();
 void tsab_graphics_begin_frame(float dt);
 void tsab_graphics_finish_frame();
 GPU_Image* tsab_graphics_get_image(int id);
-void tsab_graphics_add_image(GPU_Image* image);
+int tsab_graphics_add_image(GPU_Image* image);
 
 void tsab_graphics_bind_api(LitState* state);
 

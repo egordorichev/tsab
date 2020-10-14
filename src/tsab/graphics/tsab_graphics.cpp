@@ -182,8 +182,9 @@ GPU_Image* tsab_graphics_get_image(int id) {
 	return image_list[id];
 }
 
-void tsab_graphics_add_image(GPU_Image* image) {
+int tsab_graphics_add_image(GPU_Image* image) {
 	image_list.push_back(image);
+	return image_list.size() - 1;
 }
 
 /*

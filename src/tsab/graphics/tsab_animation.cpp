@@ -28,12 +28,23 @@ typedef struct {
 	AnimationDirection direction;
 } AnimationTag;
 
+
+struct char_cmp {
+	bool operator () (const char* a, const char* b) const {
+		return strcmp(a, b) < 0;
+	}
+};
+
 typedef struct {
 	GPU_Image* texture;
+	int texture_id;
 
 	AnimationFrame* frames;
 	int frame_count;
-	std::map<std::string, AnimationTag>* tags;
+	int width;
+	int height;
+
+	std::map<char*, AnimationTag, char_cmp>* tags;
 } AnimationData;
 
 void cleanup_animation_data(LitState* state, LitUserdata* d) {
@@ -90,25 +101,25 @@ LIT_METHOD(animation_data_constructor) {
 	GPU_SetImageFilter(texture, GPU_FILTER_NEAREST);
 	GPU_SetSnapMode(texture, GPU_SNAP_NONE);
 
-	tsab_graphics_add_image(texture);
-
 	AnimationData* data = LIT_INSERT_DATA(AnimationData, cleanup_animation_data);
 
+	data->texture_id = tsab_graphics_add_image(texture);
 	data->texture = texture;
-	data->tags = new std::map<std::string, AnimationTag>();
+	data->tags = new std::map<char*, AnimationTag, char_cmp>();
+	data->width = ase->w;
+	data->height = ase->h;
+	data->frame_count = ase->frame_count;
+	data->frames = new AnimationFrame[data->frame_count];
 
 	for (int i = 0; i < ase->tag_count; i++) {
 		auto tag = ase->tags[i];
 
-		(*data->tags)[tag.name] = (AnimationTag) {
+		(*data->tags)[(char*) tag.name] = (AnimationTag) {
 			(uint16_t) tag.from_frame,
 			(uint16_t) tag.to_frame,
 			(AnimationDirection) tag.loop_animation_direction
 		};
 	}
-
-	data->frame_count = ase->frame_count;
-	data->frames = new AnimationFrame[data->frame_count];
 
 	for (int i = 0; i < data->frame_count; i++) {
 		data->frames[i] = (AnimationFrame) {
@@ -121,8 +132,139 @@ LIT_METHOD(animation_data_constructor) {
 	return instance;
 }
 
+typedef struct {
+	AnimationData* data;
+	AnimationFrame* frame;
+	TextureRegion region;
+
+	int frame_id;
+	int start_frame;
+	int end_frame;
+
+	char* tag;
+	float time;
+} Animation;
+
+static int interpolate_frame(int frame, int start, int end, AnimationDirection direction) {
+	switch (direction) {
+		case DIRECTION_FORWARD: {
+			return start + frame;
+		}
+
+		case DIRECTION_BACKWARDS: {
+			return end - frame;
+		}
+
+		case DIRECTION_PINGPONG: {
+			// todo: implement properly
+			return start + frame;
+		}
+	}
+
+	return 0;
+}
+
+static void setup_frame_info(LitVm* vm, Animation* animation) {
+	if (animation->tag == nullptr) {
+		animation->start_frame = 0;
+		animation->end_frame = animation->data->frame_count - 1;
+		animation->frame = &animation->data->frames[interpolate_frame(animation->frame_id, animation->start_frame, animation->end_frame, DIRECTION_FORWARD)];
+
+		return;
+	}
+
+	auto iterator = animation->data->tags->find(animation->tag);
+
+	if (iterator == animation->data->tags->end()) {
+		lit_runtime_error_exiting(vm, "Unknown animation tag '%s'", animation->tag);
+	}
+
+	AnimationTag tag = iterator->second;
+
+	animation->start_frame = tag.start_frame;
+	animation->end_frame = tag.end_frame;
+	animation->frame = &animation->data->frames[interpolate_frame(animation->frame_id, animation->start_frame, animation->end_frame, tag.direction)];
+}
+
+LIT_METHOD(animation_constructor) {
+	LitInstance* data = LIT_CHECK_INSTANCE(0);
+
+	if (strcmp(data->klass->name->chars, "AnimationData") != 0) {
+		lit_runtime_error_exiting(vm, "Expected AnimationData as argument #1");
+	}
+
+	AnimationData* animation_data = LIT_EXTRACT_DATA_FROM(OBJECT_VALUE(data), AnimationData);
+	Animation* animation = LIT_INSERT_DATA(Animation, nullptr);
+
+	animation->data = animation_data;
+	animation->time = 0;
+	animation->frame_id = 0;
+
+	if (animation->data->tags->size() > 0) {
+		animation->tag = animation->data->tags->begin()->first;
+	} else {
+		animation->tag = nullptr;
+	}
+
+	if (animation_data->frame_count > 0) {
+		animation->frame = &animation_data->frames[0];
+	} else {
+		lit_runtime_error_exiting(vm, "AnimationData has 0 frames");
+	}
+
+	setup_frame_info(vm, animation);
+	return instance;
+}
+
+LIT_METHOD(animation_update) {
+	float dt = LIT_CHECK_NUMBER(0);
+
+	Animation* animation = LIT_EXTRACT_DATA(Animation);
+	animation->time += dt;
+
+	if (animation->time >= animation->frame->duration) {
+		animation->time = 0;
+		animation->frame_id++;
+
+		if (animation->frame_id >= (animation->end_frame - animation->start_frame)) {
+			animation->frame_id = 0;
+		}
+
+		setup_frame_info(vm, animation);
+	}
+
+	return NULL_VALUE;
+}
+
+LIT_METHOD(animation_texture) {
+	return NUMBER_VALUE(LIT_EXTRACT_DATA(Animation)->data->texture_id);
+}
+
+LIT_METHOD(animation_width) {
+	return NUMBER_VALUE(LIT_EXTRACT_DATA(Animation)->data->width);
+}
+
+LIT_METHOD(animation_height) {
+	return NUMBER_VALUE(LIT_EXTRACT_DATA(Animation)->data->height);
+}
+
+LIT_METHOD(animation_frame_x) {
+	return NUMBER_VALUE(LIT_EXTRACT_DATA(Animation)->frame->x);
+}
+
 void tsab_animation_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("AnimationData")
 		LIT_BIND_CONSTRUCTOR(animation_data_constructor)
+	LIT_END_CLASS()
+
+
+	LIT_BEGIN_CLASS("Animation")
+		LIT_BIND_CONSTRUCTOR(animation_constructor)
+
+		LIT_BIND_METHOD("update", animation_update)
+		LIT_BIND_GETTER("texture", animation_texture)
+		LIT_BIND_GETTER("width", animation_width)
+		LIT_BIND_GETTER("height", animation_height)
+		LIT_BIND_GETTER("frameX", animation_frame_x)
 	LIT_END_CLASS()
 }
