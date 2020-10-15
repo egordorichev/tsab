@@ -73,7 +73,7 @@ void tsab_call_method(const char* name, LitValue* args, uint arg_count) {
 	handle(call_tsab_method(CONST_STRING(state, name), args, arg_count));
 }
 
-bool tsab_init() {
+bool tsab_init(bool debug) {
 	tsab_inited = true;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -85,6 +85,8 @@ bool tsab_init() {
 	state->error_fn = error_callback;
 
 	lit_open_libraries(state);
+	lit_add_definition(state, debug ? "DEBUG" : "RELEASE");
+
 	lit_interpret(state, "prefix", (char*) prefix);
 	main_module = state->last_module;
 
@@ -129,7 +131,7 @@ bool tsab_init() {
 
 		result = lit_interpret_module(state, main_module);
 	#else
-		result = lit_interpret_file(state, "main.lit", false);
+		result = lit_interpret_file(state, "main.lit");
 		main_module = state->last_module;
 	#endif
 
@@ -229,7 +231,7 @@ static LitInstance* configure() {
 	#ifdef EMBED_BYTECODE
 		LitInterpretResult conf = lit_interpret(state, "main", bytecode);
 	#else
-		LitInterpretResult conf = lit_interpret_file(state, "config.lit", false);
+		LitInterpretResult conf = lit_interpret_file(state, "config.lit");
 	#endif
 
 	if (conf.type != INTERPRET_OK) {

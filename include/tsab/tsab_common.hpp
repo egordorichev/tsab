@@ -9,5 +9,6 @@
 typedef uint32_t uint;
 
 void tsab_report_sdl_error();
+void tsab_report_sdl_error_non_fatal();
 
 #endif

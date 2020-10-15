@@ -11,7 +11,7 @@ void loop_fn(void* arg) {
 }
 
 int main() {
-	if (!tsab_init()) {
+	if (!tsab_init(false)) {
 		printf("F.\n");
 		return -1;
 	}

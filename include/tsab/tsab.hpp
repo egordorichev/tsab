@@ -3,7 +3,7 @@
 
 #include <tsab/tsab_common.hpp>
 
-bool tsab_init();
+bool tsab_init(bool debug);
 void tsab_quit();
 
 void tsab_setup_loop();

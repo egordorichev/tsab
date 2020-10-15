@@ -7,3 +7,7 @@
 void tsab_report_sdl_error() {
 	tsab_fatal_error(SDL_GetError());
 }
+
+void tsab_report_sdl_error_non_fatal() {
+	tsab_error(SDL_GetError());
+}
