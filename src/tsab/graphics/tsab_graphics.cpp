@@ -1,6 +1,7 @@
 #include <tsab/graphics/tsab_graphics.hpp>
 #include <tsab/graphics/tsab_texture_region.hpp>
 #include <tsab/graphics/tsab_animation.hpp>
+#include <tsab/graphics/tsab_tilemap.hpp>
 #include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_common.hpp>
 
@@ -870,6 +871,7 @@ void tsab_graphics_bind_api(LitState* state) {
 
 	tsab_texture_region_bind_api(state);
 	tsab_animation_bind_api(state);
+	tsab_tilemap_bind_api(state);
 }
 
 #undef CURRENT_TARGET
