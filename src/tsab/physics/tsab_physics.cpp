@@ -67,8 +67,8 @@ static b2Body* extract_body_data(LitState* state, LitValue instance) {
 	return body;
 }
 
-void cleanup_body(LitState* state, LitUserdata* data) {
-	if (world != nullptr) {
+void cleanup_body(LitState* state, LitUserdata* data, bool mark) {
+	if (!mark && world != nullptr) {
 		b2Body* body = (b2Body*) data->data;
 
 		if (body != nullptr) {

@@ -46,9 +46,15 @@ typedef struct {
 
 	std::map<char*, AnimationTag, char_cmp>* tags;
 	std::map<char*, TextureRegion, char_cmp>* slices;
+
+	LitValue instance;
 } AnimationData;
 
-void cleanup_animation_data(LitState* state, LitUserdata* d) {
+void cleanup_animation_data(LitState* state, LitUserdata* d, bool mark) {
+	if (mark) {
+		return;
+	}
+
 	auto data = (AnimationData*) d->data;
 
 	for (auto & tag : *data->tags) {
@@ -109,6 +115,7 @@ LIT_METHOD(animation_data_constructor) {
 
 	AnimationData* data = LIT_INSERT_DATA(AnimationData, cleanup_animation_data);
 
+	data->instance = instance;
 	data->texture_id = tsab_graphics_add_image(texture);
 	data->texture = texture;
 	data->tags = new std::map<char*, AnimationTag, char_cmp>();
@@ -240,6 +247,17 @@ static void setup_frame_info(LitVm* vm, Animation* animation) {
 	animation->frame = &animation->data->frames[interpolate_frame(animation->frame_id, animation->start_frame, animation->end_frame, tag.direction)];
 }
 
+void cleanup_animation(LitState* state, LitUserdata* d, bool mark) {
+	if (!mark) {
+		return;
+	}
+
+	auto animation = (Animation*) d->data;
+
+	lit_mark_value(state->vm, animation->data->instance);
+	lit_mark_value(state->vm, animation->region);
+}
+
 LIT_METHOD(animation_constructor) {
 	LitInstance* data = LIT_CHECK_INSTANCE(0);
 
@@ -248,7 +266,7 @@ LIT_METHOD(animation_constructor) {
 	}
 
 	AnimationData* animation_data = LIT_EXTRACT_DATA_FROM(OBJECT_VALUE(data), AnimationData);
-	Animation* animation = LIT_INSERT_DATA(Animation, nullptr);
+	Animation* animation = LIT_INSERT_DATA(Animation, cleanup_animation);
 
 	animation->data = animation_data;
 	animation->time = 0;
