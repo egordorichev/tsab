@@ -1,9 +1,6 @@
 # todo
 
-* Get slices from animation (requires native texture region creation, that means that animation.frame is also needed)
-
-* test gc
-* invalid free size if lit fails to require a module
-
+* somehow fix the fact that animation->data & animation->region can get swooped by gc
 * contact detection
+* maps  
 * raycasting

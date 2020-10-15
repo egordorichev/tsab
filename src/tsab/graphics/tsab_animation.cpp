@@ -45,6 +45,7 @@ typedef struct {
 	int height;
 
 	std::map<char*, AnimationTag, char_cmp>* tags;
+	std::map<char*, TextureRegion, char_cmp>* slices;
 } AnimationData;
 
 void cleanup_animation_data(LitState* state, LitUserdata* d) {
@@ -56,6 +57,7 @@ void cleanup_animation_data(LitState* state, LitUserdata* d) {
 
 	delete data->frames;
 	delete data->tags;
+	delete data->slices;
 }
 
 LIT_METHOD(animation_data_constructor) {
@@ -110,6 +112,7 @@ LIT_METHOD(animation_data_constructor) {
 	data->texture_id = tsab_graphics_add_image(texture);
 	data->texture = texture;
 	data->tags = new std::map<char*, AnimationTag, char_cmp>();
+	data->slices = new std::map<char*, TextureRegion, char_cmp>();
 	data->width = ase->w;
 	data->height = ase->h;
 	data->frame_count = ase->frame_count;
@@ -120,7 +123,6 @@ LIT_METHOD(animation_data_constructor) {
 
 		int length = strlen(tag.name) + 1;
 		char* str = new char[length];
-
 		memcpy(str, tag.name, length);
 
 		(*data->tags)[str] = (AnimationTag) {
@@ -137,14 +139,57 @@ LIT_METHOD(animation_data_constructor) {
 		};
 	}
 
+	for (int i = 0; i < ase->slice_count; i++) {
+		auto slice = ase->slices[i];
+
+		int length = strlen(slice.name) + 1;
+		char* str = new char[length];
+		memcpy(str, slice.name, length);
+
+		(*data->slices)[str] = (TextureRegion) {
+			data->texture,
+			(uint16_t) slice.origin_x,
+			(uint16_t) slice.origin_y,
+			(uint16_t) slice.w,
+			(uint16_t) slice.h
+		};
+	}
+
 	cute_aseprite_free(ase);
 	return instance;
 }
 
+LIT_METHOD(animation_data_get_slice) {
+	const char* name = LIT_CHECK_STRING(0);
+	auto data = LIT_EXTRACT_DATA(AnimationData);
+
+	auto iterator = data->slices->find((char*) name);
+
+	if (iterator == data->slices->end()) {
+		return NULL_VALUE;
+	}
+
+	auto slice = iterator->second;
+
+	LitValue ar[5] {
+		NUMBER_VALUE(data->texture_id),
+		NUMBER_VALUE(slice.x),
+		NUMBER_VALUE(slice.y),
+		NUMBER_VALUE(slice.w),
+		NUMBER_VALUE(slice.h),
+	};
+
+	return lit_call_new(vm, "TextureRegion", ar, 5);
+}
+
+/*
+ * Actual animation holder
+ */
+
 typedef struct {
 	AnimationData* data;
 	AnimationFrame* frame;
-	TextureRegion region;
+	LitValue region;
 
 	int frame_id;
 	int start_frame;
@@ -208,6 +253,7 @@ LIT_METHOD(animation_constructor) {
 	animation->data = animation_data;
 	animation->time = 0;
 	animation->frame_id = 0;
+	animation->region = NULL_VALUE;
 
 	if (animation->data->tags->size() > 0) {
 		animation->tag = animation->data->tags->begin()->first;
@@ -257,8 +303,26 @@ LIT_METHOD(animation_height) {
 	return NUMBER_VALUE(LIT_EXTRACT_DATA(Animation)->data->height);
 }
 
-LIT_METHOD(animation_frame_x) {
-	return NUMBER_VALUE(LIT_EXTRACT_DATA(Animation)->frame->x);
+LIT_METHOD(animation_frame) {
+	auto animation = LIT_EXTRACT_DATA(Animation);
+
+	if (animation->region == NULL_VALUE) {
+		LitValue ar[5] = {
+			NUMBER_VALUE(animation->data->texture_id),
+			NUMBER_VALUE(animation->frame->x),
+			NUMBER_VALUE(0),
+			NUMBER_VALUE(animation->data->width),
+			NUMBER_VALUE(animation->data->height)
+		};
+
+		animation->region = lit_call_new(vm, "TextureRegion", ar, 5);
+		return animation->region;
+	}
+
+	auto animation_data = LIT_EXTRACT_DATA_FROM(animation->region, TextureRegion);
+	animation_data->x = animation->frame->x;
+
+	return animation->region;
 }
 
 LIT_METHOD(animation_tag) {
@@ -281,6 +345,8 @@ LIT_METHOD(animation_tag) {
 void tsab_animation_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("AnimationData")
 		LIT_BIND_CONSTRUCTOR(animation_data_constructor)
+
+		LIT_BIND_METHOD("getSlice", animation_data_get_slice)
 	LIT_END_CLASS()
 
 
@@ -291,7 +357,7 @@ void tsab_animation_bind_api(LitState* state) {
 		LIT_BIND_GETTER("texture", animation_texture)
 		LIT_BIND_GETTER("width", animation_width)
 		LIT_BIND_GETTER("height", animation_height)
-		LIT_BIND_GETTER("frameX", animation_frame_x)
+		LIT_BIND_GETTER("frame", animation_frame)
 
 		LIT_BIND_FIELD("tag", animation_tag, animation_tag)
 	LIT_END_CLASS()
