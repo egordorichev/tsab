@@ -2,7 +2,7 @@
 #define TSAB_TEXTURE_REGION_HPP
 
 #include <tsab/tsab_common.hpp>
-#include <SDL_gpu.h>
+#include "SDL_gpu.h"
 
 typedef struct TextureRegion {
 	GPU_Image* texture;

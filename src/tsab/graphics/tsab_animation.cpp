@@ -5,7 +5,7 @@
 #define CUTE_ASEPRITE_IMPLEMENTATION
 #include "cute_aseprite.h"
 
-#include <SDL_gpu.h>
+#include "SDL_gpu.h"
 
 #include <vector>
 #include <map>

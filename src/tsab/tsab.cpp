@@ -7,7 +7,7 @@
 #include <tsab/tsab_ui.hpp>
 #include <tsab/physics/tsab_physics.hpp>
 
-#include <lit/lit.hpp>
+#include "lit.hpp"
 
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -86,6 +86,7 @@ bool tsab_init(bool debug) {
 
 	lit_open_libraries(state);
 	lit_add_definition(state, debug ? "DEBUG" : "RELEASE");
+	lit_set_optimization_level(debug ? OPTIMIZATION_LEVEL_DEBUG : OPTIMIZATION_LEVEL_RELEASE);
 
 	lit_interpret(state, "prefix", (char*) prefix);
 	main_module = state->last_module;

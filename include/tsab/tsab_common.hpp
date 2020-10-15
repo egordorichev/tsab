@@ -1,7 +1,7 @@
 #ifndef TSAB_COMMON_HPP
 #define TSAB_COMMON_HPP
 
-#include <lit/lit.hpp>
+#include "lit.hpp"
 
 #include <cstdint>
 #include <cstdbool>

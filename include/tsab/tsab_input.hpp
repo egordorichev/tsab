@@ -2,7 +2,7 @@
 #define TSAB_INPUT_HPP
 
 #include <SDL.h>
-#include <lit/lit.hpp>
+#include "lit.hpp"
 
 #define MOUSE_1 0
 #define MOUSE_2 1

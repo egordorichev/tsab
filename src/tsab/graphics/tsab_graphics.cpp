@@ -4,7 +4,7 @@
 #include <tsab/tsab_shaders.hpp>
 #include <tsab/tsab_common.hpp>
 
-#include <SDL_gpu.h>
+#include "SDL_gpu.h"
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_image.h>
