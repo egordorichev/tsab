@@ -262,7 +262,7 @@ LIT_METHOD(animation_constructor) {
 	LitInstance* data = LIT_CHECK_INSTANCE(0);
 
 	if (strcmp(data->klass->name->chars, "AnimationData") != 0) {
-		lit_runtime_error_exiting(vm, "Expected AnimationData as argument #1");
+		lit_runtime_error_exiting(vm, "Expected AnimationData as argument #0");
 	}
 
 	AnimationData* animation_data = LIT_EXTRACT_DATA_FROM(OBJECT_VALUE(data), AnimationData);

@@ -119,10 +119,53 @@ LIT_METHOD(tilemap_render) {
 	return NULL_VALUE;
 }
 
+LIT_METHOD(tilemap_get_tile) {
+	int x = LIT_CHECK_NUMBER(0);
+	int y = LIT_CHECK_NUMBER(1);
+
+	auto data = LIT_EXTRACT_DATA(Tilemap);
+	auto map = data->map;
+
+	if (x < 0 || y < 0 || x >= map->width || y >= map->height) {
+		return NULL_VALUE;
+	}
+
+	return NUMBER_VALUE(data->tiles->data[x + y * map->width]);
+}
+
+LIT_METHOD(tilemap_set_tile) {
+	int x = LIT_CHECK_NUMBER(0);
+	int y = LIT_CHECK_NUMBER(1);
+	int tile = LIT_CHECK_NUMBER(2);
+
+	auto data = LIT_EXTRACT_DATA(Tilemap);
+	auto map = data->map;
+
+	if (x < 0 || y < 0 || x >= map->width || y >= map->height) {
+		return NULL_VALUE;
+	}
+
+	data->tiles->data[x + y * map->width] = tile;
+	return NULL_VALUE;
+}
+
+LIT_METHOD(tilemap_width) {
+	return NUMBER_VALUE(LIT_EXTRACT_DATA(Tilemap)->map->width);
+}
+
+LIT_METHOD(tilemap_height) {
+	return NUMBER_VALUE(LIT_EXTRACT_DATA(Tilemap)->map->height);
+}
+
 void tsab_tilemap_bind_api(LitState* state) {
 	LIT_BEGIN_CLASS("Tilemap")
 		LIT_BIND_CONSTRUCTOR(tilemap_constructor)
 
+		LIT_BIND_GETTER("width", tilemap_width)
+		LIT_BIND_GETTER("height", tilemap_height)
+
 		LIT_BIND_METHOD("render", tilemap_render)
+		LIT_BIND_METHOD("getTile", tilemap_get_tile)
+		LIT_BIND_METHOD("setTile", tilemap_set_tile)
 	LIT_END_CLASS()
 }
