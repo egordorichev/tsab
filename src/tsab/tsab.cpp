@@ -58,19 +58,19 @@ static LitInterpretResult call_tsab_method(LitString* name, LitValue* args, uint
 	return (LitInterpretResult) { INTERPRET_INVALID, NULL_VALUE };
 }
 
-static bool handle(LitInterpretResult result) {
+bool tsab_handle_call(LitInterpretResult result) {
 	if (result.type == INTERPRET_OK || result.type == INTERPRET_INVALID) {
 		return false;
 	}
 
-	call_tsab_method(CONST_STRING(state, "handleError"), result.result == NULL_VALUE ? &last_error : &result.result, 1);
+	call_tsab_method(CONST_STRING(state, "handleError"), &last_error, 1);
 	last_error = NULL_VALUE;
 
 	return true;
 }
 
 void tsab_call_method(const char* name, LitValue* args, uint arg_count) {
-	handle(call_tsab_method(CONST_STRING(state, name), args, arg_count));
+	tsab_handle_call(call_tsab_method(CONST_STRING(state, name), args, arg_count));
 }
 
 bool tsab_init(bool debug) {
@@ -136,8 +136,8 @@ bool tsab_init(bool debug) {
 		main_module = state->last_module;
 	#endif
 
-	if (!handle(result)) {
-		handle(call_tsab_method(CONST_STRING(state, "init"), nullptr, 0));
+	if (!tsab_handle_call(result)) {
+		tsab_handle_call(call_tsab_method(CONST_STRING(state, "init"), nullptr, 0));
 	}
 
 	update_string = CONST_STRING(state, "update");
@@ -193,12 +193,12 @@ bool tsab_frame() {
 		return true;
 	}
 
-	handle(interpret_result);
+	tsab_handle_call(interpret_result);
 
 	tsab_input_update();
 	tsab_graphics_begin_frame(realDelta);
 
-	handle(call_tsab_method(render_string, nullptr, 0));
+	tsab_handle_call(call_tsab_method(render_string, nullptr, 0));
 	tsab_graphics_finish_frame();
 
 	delta = (float) end_time - (float) start_time;
@@ -241,7 +241,7 @@ static LitInstance* configure() {
 
 	conf = call_tsab_method(CONST_STRING(state, "configure"), nullptr, 0);
 
-	if (handle(conf)) {
+	if (tsab_handle_call(conf)) {
 		return nullptr;
 	}
 

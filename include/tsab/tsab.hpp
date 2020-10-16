@@ -17,5 +17,6 @@ void tsab_error(const char* message);
 void tsab_fatal_error(const char* message);
 
 void tsab_call_method(const char* name, LitValue* args, uint arg_count);
+bool tsab_handle_call(LitInterpretResult result);
 
 #endif

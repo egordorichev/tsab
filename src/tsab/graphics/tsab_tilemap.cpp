@@ -1,5 +1,6 @@
 #include <tsab/graphics/tsab_tilemap.hpp>
 #include <tsab/graphics/tsab_graphics.hpp>
+#include <tsab/tsab.hpp>
 
 #define CUTE_TILED_IMPLEMENTATION
 #define STRPOOL_EMBEDDED_IMPLEMENTATION
@@ -79,12 +80,52 @@ LIT_METHOD(tilemap_constructor) {
 	GPU_SetAnchor(texture, 0, 0); // Aka origin
 	tsab_graphics_add_image(texture);
 
+	if (arg_count > 2 && IS_CALLABLE_FUNCTION(args[2])) {
+		auto layer = map->layers;
+		auto callee = args[2];
+
+		LitState* state = vm->state;
+
+		while (layer != nullptr) {
+			if (layer->objects != nullptr) {
+				auto object = layer->objects;
+				LitInstance* properties = lit_create_instance(state, vm->state->object_class);
+
+				LitValue ar[2] = {
+					OBJECT_VALUE(properties), OBJECT_CONST_STRING(state, layer->name.ptr)
+				};
+
+				LitString* name = CONST_STRING(state, "name");
+				LitString* type = CONST_STRING(state, "type");
+
+				LitString* x = CONST_STRING(state, "x");
+				LitString* y = CONST_STRING(state, "y");
+				LitString* width = CONST_STRING(state, "width");
+				LitString* height = CONST_STRING(state, "height");
+
+				while (object != nullptr) {
+					lit_table_set(state, &properties->fields, name, OBJECT_CONST_STRING(state, object->name.ptr));
+					lit_table_set(state, &properties->fields, type, OBJECT_CONST_STRING(state, object->type.ptr));
+
+					lit_table_set(state, &properties->fields, x, NUMBER_VALUE(object->x));
+					lit_table_set(state, &properties->fields, y, NUMBER_VALUE(object->y));
+					lit_table_set(state, &properties->fields, width, NUMBER_VALUE(object->width));
+					lit_table_set(state, &properties->fields, height, NUMBER_VALUE(object->height));
+
+					tsab_handle_call(lit_call(state, vm->fiber->module, callee, ar, 2));
+					object = object->next;
+				}
+			}
+
+			layer = layer->next;
+		}
+	}
+
 	return instance;
 }
 
 LIT_METHOD(tilemap_render) {
 	auto target = tsab_graphics_get_current_target();
-
 	auto tilemap = LIT_EXTRACT_DATA(Tilemap);
 
 	// Put as much heavy-accessed variables into locals as we can for speed increase

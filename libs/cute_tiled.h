@@ -1,4 +1,5 @@
 // Taken from https://raw.githubusercontent.com/RandyGaul/cute_headers/master/cute_tiled.h
+// Modified a tiny bit by egordorichev
 
 /*
 	------------------------------------------------------------------------------
@@ -2411,7 +2412,7 @@ static int cute_tiled_dispatch_map_internal(cute_tiled_map_internal_t* m)
 	{
 		int compressionlevel;
 		cute_tiled_read_int(m, &compressionlevel);
-		CUTE_TILED_CHECK(compressionlevel == -1, "Compression is not yet supported.");
+		CUTE_TILED_CHECK(compressionlevel == -1 || compressionlevel == 0, "Compression is not yet supported.");
 	}	break;
 
 	case 13648382824248632287U: // editorsettings
