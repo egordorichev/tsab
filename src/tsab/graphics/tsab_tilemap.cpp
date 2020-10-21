@@ -112,7 +112,7 @@ LIT_METHOD(tilemap_constructor) {
 					lit_table_set(state, &properties->fields, width, NUMBER_VALUE(object->width));
 					lit_table_set(state, &properties->fields, height, NUMBER_VALUE(object->height));
 
-					tsab_handle_call(lit_call(state, vm->fiber->module, callee, ar, 2));
+					tsab_handle_call(lit_call(state, callee, ar, 2));
 					object = object->next;
 				}
 			}

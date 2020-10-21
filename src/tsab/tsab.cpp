@@ -32,7 +32,6 @@ static float fps;
 static LitValue last_error = NULL_VALUE;
 
 static LitInstance* configure();
-static LitModule* main_module;
 
 extern "C" const char prefix[];
 
@@ -49,13 +48,7 @@ static void error_callback(LitState* state, const char* message) {
 }
 
 static LitInterpretResult call_tsab_method(LitString* name, LitValue* args, uint arg_count) {
-	LitValue method;
-
-	if (lit_table_get(&tsab->fields, name, &method)) {
-		return lit_call(state, main_module, method, args, arg_count);
-	}
-
-	return (LitInterpretResult) { INTERPRET_INVALID, NULL_VALUE };
+	return lit_find_and_call_method(state, OBJECT_VALUE(tsab), name, args, arg_count);
 }
 
 bool tsab_handle_call(LitInterpretResult result) {
@@ -89,8 +82,6 @@ bool tsab_init(bool debug) {
 	lit_set_optimization_level(debug ? OPTIMIZATION_LEVEL_DEBUG : OPTIMIZATION_LEVEL_RELEASE);
 
 	lit_interpret(state, "prefix", (char*) prefix);
-	main_module = state->last_module;
-
 	LitValue value = lit_get_global(state, CONST_STRING(state, "tsab"));
 
 	if (!IS_INSTANCE(value)) {
@@ -123,7 +114,7 @@ bool tsab_init(bool debug) {
 	LitInterpretResult result;
 
 	#ifdef EMBED_BYTECODE
-		main_module = lit_get_module(state, "main");
+		LitModule* module = main_module = lit_get_module(state, "main");
 
 		if (main_module == nullptr) {
 			std::cout << "Main module is missing\n";
@@ -133,7 +124,6 @@ bool tsab_init(bool debug) {
 		result = lit_interpret_module(state, main_module);
 	#else
 		result = lit_interpret_file(state, "main.lit");
-		main_module = state->last_module;
 	#endif
 
 	if (!tsab_handle_call(result)) {
@@ -155,7 +145,7 @@ void tsab_quit() {
 	tsab_inited = false;
 
 	if (state != nullptr) {
-		lit_call_function(state, main_module, lit_get_global_function(state, CONST_STRING(state, "destroy")), nullptr, 0);
+		call_tsab_method(CONST_STRING(state, "destroy"), nullptr, 0);
 		lit_free_state(state);
 	}
 
